@@ -1,1 +1,5 @@
 # SAATM
+
+## Run
+
+./gradlew run

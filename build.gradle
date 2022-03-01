@@ -27,6 +27,22 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+task(runATM, dependsOn: 'classes', type: JavaExec) {
+   main = 'MainATM'
+   classpath = sourceSets.main.runtimeClasspath
+   if(project.hasProperty('myargs')){
+        args(myargs.split(','))
+   }
+}
+
+task(runBank, dependsOn: 'classes', type: JavaExec) {
+   main = 'MainBank'
+   classpath = sourceSets.main.runtimeClasspath
+   if(project.hasProperty('myargs')){
+        args(myargs.split(','))
+   }
+}
+
 // Define the main class for the application
 mainClassName = 'App'
 

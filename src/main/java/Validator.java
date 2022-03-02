@@ -7,6 +7,7 @@ public class Validator {
     }
 
     public static boolean validateArgs(String args) {
+        // TODO não percebi se aqui é para TODOS os argumentos ou CADA UM...
         return args.length() <= 4096;
     }
 

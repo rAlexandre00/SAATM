@@ -9,8 +9,9 @@ public class MainBank {
 
     private ServerSocket ss;
     private Socket s;
-    private ObjectOutputStream opt;
-    private ObjectInputStream ipt;
+    private PrintWriter opt;
+    private InputStreamReader ipt;
+    private BufferedReader bf;
 
     public MainBank(){
 
@@ -42,22 +43,21 @@ public class MainBank {
     }
 
     private void setupStreams() throws IOException{
-        opt = new ObjectOutputStream(s.getOutputStream());
+        opt = new PrintWriter(s.getOutputStream());
         opt.flush();
 
-        ipt = new ObjectInputStream(s.getInputStream());
+        ipt = new InputStreamReader(s.getInputStream());
+        bf = new BufferedReader(ipt);
         System.out.println("\nStreams now setup. \n");
     }
 
+    // test if it's working
     private void communication() throws IOException{
         String msg = "hi";
         sendSimpleMessage(msg);
         do{
-            try{
-                msg = (String) ipt.readObject();
-            }catch(ClassNotFoundException e){
-                System.out.println("\nError.");
-            }
+            String message = bf.readLine();
+            System.out.println("client: " + message);
         }while(!msg.equals("ATM: END"));
     }
 
@@ -74,12 +74,8 @@ public class MainBank {
     }
 
     private void sendSimpleMessage(String msg){
-        try{
-            opt.writeObject("MainBank:  " + msg);
-            opt.flush();
-        }catch (IOException e){
-            System.out.println("\n Unable to send message.");
-        }
+        opt.println("MainBank:  " + msg);
+        opt.flush();
     }
 
     public static void main(String[] args) throws IOException {

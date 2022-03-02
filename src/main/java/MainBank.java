@@ -79,7 +79,7 @@ public class MainBank {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Arguments 0 - " + args[0]);
+        //System.out.println("Arguments 0 - " + args[0]);
 
         MainBank mb = new MainBank();
         mb.startRunning();

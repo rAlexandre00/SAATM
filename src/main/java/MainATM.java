@@ -76,7 +76,7 @@ public class MainATM {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Arguments 0 - " + args[0]);
+        //System.out.println("Arguments 0 - " + args[0]);
 
         MainATM atm = new MainATM();
         atm.startRunning();

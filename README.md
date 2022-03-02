@@ -7,7 +7,7 @@
 ./gradlew runATM -Pmyargs=arg1,arg2,arg3
 ```
 
-### Bank
+### bank.Bank
 ```
 ./gradlew runBank -Pmyargs=arg1,arg2,arg3
 ```

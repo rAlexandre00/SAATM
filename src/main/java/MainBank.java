@@ -19,12 +19,10 @@ public class MainBank {
             while (true) {
                 try{
                     waitForConnection();
-                    setupStreams();
-                    communication();
+                    ClientHandler clientS = new ClientHandler(s);
+                    new Thread(clientS).start();
                 }catch (EOFException e){
                     System.out.println("\nServer: Lost Connection. ");
-                }finally {
-                    closeConnection();
                 }
             }
         }catch(IOException e){
@@ -72,6 +70,25 @@ public class MainBank {
     private void sendSimpleMessage(String msg){
         opt.println("MainBank:  " + msg);
         opt.flush();
+    }
+    
+    private class ClientHandler implements Runnable {
+        private final Socket clientS;
+
+        public ClientHandler(Socket s){
+            this.clientS = s;
+        }
+
+        public void run(){
+            try{
+                setupStreams();
+                communication();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }finally {
+                closeConnection();
+            }
+        }
     }
 
     public static void main(String[] args) throws IOException {

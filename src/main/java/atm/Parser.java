@@ -15,6 +15,10 @@ public class Parser {
         ap.addArgument("-s").setDefault("bank.auth");
         ap.addArgument("-i").setDefault("127.0.0.1");
         ap.addArgument("-c");
+        ap.addArgument("-n");
+        ap.addArgument("-d");
+        ap.addArgument("-w");
+        ap.addArgument("-g");
     }
 
     public Namespace parseArguments(String[] args) throws ArgumentParserException {

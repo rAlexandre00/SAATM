@@ -29,20 +29,30 @@ dependencies {
 }
 
 task(runATM, dependsOn: 'classes', type: JavaExec) {
-   main = 'MainATM'
-   classpath = sourceSets.main.runtimeClasspath
-   if(project.hasProperty('myargs')){
-        args(myargs.split(','))
-   }
+    main = 'MainATM'
+    classpath = sourceSets.main.runtimeClasspath
+    if(project.hasProperty('args')){
+       List parsedArgs = project.args.split(' ')
+       parsedArgs.removeIf {
+           x -> x == ""
+       }
+       args(parsedArgs)
+    }
 }
 
 task(runBank, dependsOn: 'classes', type: JavaExec) {
-   main = 'MainBank'
-   classpath = sourceSets.main.runtimeClasspath
-   if(project.hasProperty('myargs')){
-        args(myargs.split(','))
-   }
+    main = 'MainBank'
+    classpath = sourceSets.main.runtimeClasspath
+    if(project.hasProperty('args')){
+        List parsedArgs = project.args.split(' ')
+        parsedArgs.removeIf {
+            x -> x == ""
+        }
+        args(parsedArgs)
+    }
 }
+
+
 
 // Define the main class for the application
 mainClassName = 'App'

@@ -4,10 +4,10 @@
 
 ### ATM
 ```
-./gradlew runATM -Pmyargs=arg1,arg2,arg3
+./gradlew runATM -Pargs="-f1 arg1 -f2 arg2 -f3 arg3"
 ```
 
 ### bank.Bank
 ```
-./gradlew runBank -Pmyargs=arg1,arg2,arg3
+./gradlew runBank -Pargs="-f1 arg1 -f2 arg2 -f3 arg3"
 ```

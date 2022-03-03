@@ -52,8 +52,16 @@ task(runBank, dependsOn: 'classes', type: JavaExec) {
     }
 }
 
-
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'MainATM'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 
 // Define the main class for the application
-mainClassName = 'App'
+mainClassName = 'MainATM'
 

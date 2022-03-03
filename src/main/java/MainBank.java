@@ -55,10 +55,8 @@ public class MainBank {
         do{
             String message = bf.readLine();
             System.out.println("client: " + message);
+            sendSimpleMessage(msg);
         }while(!msg.equals("ATM: END"));
-
-        sendSimpleMessage(msg);
-
     }
 
     private void closeConnection() {
@@ -108,7 +106,17 @@ public class MainBank {
         }
         String port = ns.getString("p");
         String authFile = ns.getString("s");
-        // TODO: Needs validation
+
+
+        // Validate port
+        if(!Validator.validatePort(port))
+            System.exit(255);
+
+        // Validate authFile
+        File tempFile = new File(authFile);
+        if(tempFile.exists())
+            System.exit(255);
+
         MainBank mb = new MainBank(authFile);
         mb.startRunning(port);
     }

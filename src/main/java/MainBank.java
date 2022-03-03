@@ -1,3 +1,7 @@
+import bank.Parser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import java.net.*;
 import java.io.*;
 
@@ -8,14 +12,15 @@ public class MainBank {
     private PrintWriter opt;
     private InputStreamReader ipt;
     private BufferedReader bf;
+    private String authFile;
 
-    public MainBank(){
-
+    public MainBank(String authFile){
+        // TODO: Do something with authFile
     }
 
-    public void startRunning(){
+    public void startRunning(String port){
         try{
-            ss = new ServerSocket(3000);
+            ss = new ServerSocket(Integer.parseInt(port));
             while (true) {
                 try{
 
@@ -93,10 +98,19 @@ public class MainBank {
     }
 
     public static void main(String[] args) throws IOException {
-        //System.out.println("Arguments 0 - " + args[0]);
-
-        MainBank mb = new MainBank();
-        mb.startRunning();
+        Parser ap = new Parser();
+        Namespace ns = null;
+        try {
+            ns = ap.parseArguments(args);
+        } catch (ArgumentParserException e) {
+            System.err.println("Error reading program arguments");
+            System.exit(255);
+        }
+        String port = ns.getString("p");
+        String authFile = ns.getString("s");
+        // TODO: Needs validation
+        MainBank mb = new MainBank(authFile);
+        mb.startRunning(port);
     }
 
 }

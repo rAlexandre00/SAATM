@@ -27,7 +27,7 @@ public class Account {
     public Object getCardHash() { return cardHash; }
 
     /**
-     * Ads amount to account balance
+     * Adds amount to account balance
      * @param amount to be added
      * @return the resulting balance
      */

@@ -18,9 +18,14 @@ public class MainBank {
             ss = new ServerSocket(3000);
             while (true) {
                 try{
-                    waitForConnection();
+
+                    System.out.println("Listening...\n");
+                    s = ss.accept();
+                    System.out.println("Connection.\n");
+
                     ClientHandler clientS = new ClientHandler(s);
                     new Thread(clientS).start();
+
                 }catch (EOFException e){
                     System.out.println("\nServer: Lost Connection. ");
                 }
@@ -28,12 +33,6 @@ public class MainBank {
         }catch(IOException e){
             e.printStackTrace();
         }
-    }
-
-    private void waitForConnection() throws IOException{
-        System.out.println("Listening...\n");
-        s = ss.accept();
-        System.out.println("Connection.\n");
     }
 
     private void setupStreams() throws IOException{
@@ -48,11 +47,13 @@ public class MainBank {
     // test if it's working
     private void communication() throws IOException{
         String msg = "hi";
-        sendSimpleMessage(msg);
         do{
             String message = bf.readLine();
             System.out.println("client: " + message);
         }while(!msg.equals("ATM: END"));
+
+        sendSimpleMessage(msg);
+
     }
 
     private void closeConnection() {

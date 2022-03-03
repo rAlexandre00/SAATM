@@ -1,3 +1,7 @@
+import atm.Parser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import java.net.*;
 import java.io.*;
 
@@ -69,9 +73,22 @@ public class MainATM {
     }
 
     public static void main(String[] args) throws IOException {
+        Parser ap = new Parser();
+        Namespace ns = null;
+        try {
+            ns = ap.parseArguments(args);
+        } catch (ArgumentParserException e) {
+            System.err.println("Error reading program arguments");
+            System.exit(255);
+        }
 
-        String ip = args[0];
-        int port = Integer.parseInt(args[1]);
+        // Printing arguments for debug
+        System.out.println(ns);
+
+        // TODO: Needs arguments validation
+
+        String ip = ns.getString("i");
+        int port = Integer.parseInt(ns.getString("p"));
 
         startRunning(ip, port);
     }

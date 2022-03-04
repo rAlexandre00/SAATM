@@ -1,9 +1,13 @@
 import bank.Parser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import sun.security.x509.X509CertImpl;
 
 import java.net.*;
 import java.io.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.cert.CertificateEncodingException;
 
 public class MainBank {
 
@@ -15,7 +19,18 @@ public class MainBank {
     private String authFile;
 
     public MainBank(String authFile){
-        // TODO: Do something with authFile
+        KeyPair kp = Encryption.generateKeyPair();
+        X509CertImpl cert = null;
+        try {
+            cert = Encryption.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
+        } catch (GeneralSecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            Encryption.certificateToFile(cert, authFile);
+        } catch (CertificateEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     public void startRunning(String port){
@@ -106,7 +121,6 @@ public class MainBank {
         }
         String port = ns.getString("p");
         String authFile = ns.getString("s");
-
 
         // Validate port
         if(!Validator.validatePort(port))

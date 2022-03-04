@@ -4,31 +4,47 @@ import net.sourceforge.argparse4j.inf.Namespace;
 
 import java.net.*;
 import java.io.*;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 
 public class MainATM {
+
+    public static final String X509 = "X.509";
 
     private static Socket s;
     private static PrintWriter opt;
     private static InputStreamReader ipt;
+    private static Certificate serverCert;
 
     public MainATM(){
 
     }
 
-    public static void startRunning(String ip, int port){
+    public static void startRunning(String cardFileName, String ip, int port){
         try{
 
+            serverCert = loadCardFile(cardFileName);
             connectToServer(ip, port);
             setupStreams();
             communication();
 
         }catch (EOFException e){
             System.out.println("\nATM terminated connection");
-        }catch (IOException e){
+        }catch (IOException | CertificateException e){
             e.printStackTrace();
-        }finally {
+        } finally {
             closeConnection();
         }
+    }
+
+    private static Certificate loadCardFile(String cardFileName) throws CertificateException, IOException {
+        CertificateFactory certificateFactory = CertificateFactory.getInstance(X509);
+        FileInputStream fis = new FileInputStream(cardFileName);
+        Certificate certificate = certificateFactory.generateCertificate(fis);
+        fis.close();
+        return certificate;
     }
 
     private static void connectToServer(String ip, int port) throws IOException{
@@ -89,7 +105,8 @@ public class MainATM {
 
         String ip = ns.getString("i");
         int port = Integer.parseInt(ns.getString("p"));
+        String cardFileName = ns.getString("s");
 
-        startRunning(ip, port);
+        startRunning(cardFileName, ip, port);
     }
 }

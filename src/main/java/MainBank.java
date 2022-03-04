@@ -21,6 +21,7 @@ public class MainBank {
     public MainBank(String authFile){
         KeyPair kp = Encryption.generateKeyPair();
         X509CertImpl cert = null;
+        System.out.println("Generating Auth File...\n");
         try {
             cert = Encryption.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
         } catch (GeneralSecurityException | IOException e) {
@@ -28,6 +29,7 @@ public class MainBank {
         }
         try {
             Encryption.certificateToFile(cert, authFile);
+            System.out.println("Created!\n");
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
         }

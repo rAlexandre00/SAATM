@@ -7,8 +7,9 @@ public class Validator {
         return Pattern.matches("0|[1-9][0-9]*", number);
     }
 
-    public static boolean validateArgs(String args) {
-        return args.length() <= 4096;
+    //TODO:
+    public static boolean validateArgs(String[] args) {
+        return args.length <= 4096;
     }
 
     public static boolean validateFileNames(String filename) {

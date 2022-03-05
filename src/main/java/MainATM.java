@@ -1,13 +1,18 @@
 import atm.Parser;
+import exception.AccountCardFileNotValidException;
+import exception.AccountNameNotUniqueException;
+import exception.InsufficientAccountBalanceException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
+import java.awt.*;
 import java.net.*;
 import java.io.*;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+
 
 public class MainATM {
 
@@ -28,7 +33,7 @@ public class MainATM {
             serverCert = loadCardFile(cardFileName);
             connectToServer(ip, port);
             setupStreams();
-            communication();
+            //communication();
 
         }catch (EOFException e){
             System.out.println("\nATM terminated connection");
@@ -91,10 +96,99 @@ public class MainATM {
     public static void main(String[] args) throws IOException {
         Parser ap = new Parser();
         Namespace ns = null;
+        Validator vld = new Validator();
+        boolean operationDone = false;
         try {
-            ns = ap.parseArguments(args);
+            if (vld.validateArgs(args) == false){
+                //System.exit(255);
+            }else{
+                ns = ap.parseArguments(args);
+                System.out.println(ns.getAttrs());
+            }
+
+            if (vld.validateIP(ns.getString("i")) == false){
+                System.exit(255);
+            }
+            if (vld.validatePort(ns.getString("p")) == false){
+                System.exit(255);
+            }
+            if (vld.validateFileNames(ns.getString("s")) == false){
+                System.exit(255);
+            }
+            if (vld.validateAccountNames(ns.getString("a")) == false){
+                System.exit(255);
+            }
+
+            String ip = ns.getString("i");
+            int port = Integer.parseInt(ns.getString("p"));
+            String cardFileName = ns.getString("s");
+            String accName = ns.getString("a");
+
+            startRunning(cardFileName, ip, port);
+
+
+            if (ns.getString("n") != null){
+                if (vld.validateNumericInputs(ns.getString("n")) == false){
+                    System.exit(255);
+                }else {
+                    double iBalance = Double.parseDouble(ns.getString("n"));
+                    opt.println(accName);
+                    opt.flush();
+                    opt.println(iBalance);
+                    opt.flush();
+                    operationDone = true;
+                }
+            }if (ns.getString("d") != null){
+                if(!operationDone) {
+                    if (vld.validateNumericInputs(ns.getString("d")) == false) {
+                        System.exit(255);
+                    } else {
+                        double amount = Double.parseDouble(ns.getString("d"));
+                        opt.println(cardFileName);
+                        opt.flush();
+                        opt.println(accName);
+                        opt.flush();
+                        opt.println(amount);
+                        opt.flush();
+                        operationDone = true;
+                    }
+                }else {
+                    System.exit(255);
+                }
+            }if (ns.getString("w") != null){
+                if(!operationDone){
+                    if(vld.validateNumericInputs(ns.getString("w")) == false){
+                        System.exit(255);
+                    }else {
+                        double wAmount = Double.parseDouble(ns.getString("w"));
+                        opt.println(cardFileName);
+                        opt.flush();
+                        opt.println(accName);
+                        opt.flush();
+                        opt.println(wAmount);
+                        opt.flush();
+                        operationDone = true;
+                    }
+                }else{
+                    System.exit(255);
+                }
+
+            }if (ns.getString("g") != null) {
+                if (!operationDone) {
+                    System.out.println("Hello4");
+                    opt.println(cardFileName);
+                    opt.flush();
+                    opt.println(accName);
+                    opt.flush();
+                    operationDone = true;
+                } else {
+                    System.exit(255);
+                }
+            }if(!operationDone){
+                System.exit(255);
+            }
         } catch (ArgumentParserException e) {
-            System.err.println("Error reading program arguments");
+            System.err.println("Error reading program arguments"); //Help request should be a valid request?
             System.exit(255);
         }
 
@@ -103,10 +197,5 @@ public class MainATM {
 
         // TODO: Needs arguments validation
 
-        String ip = ns.getString("i");
-        int port = Integer.parseInt(ns.getString("p"));
-        String cardFileName = ns.getString("s");
-
-        startRunning(cardFileName, ip, port);
     }
 }

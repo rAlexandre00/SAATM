@@ -18,7 +18,7 @@ public class Parser {
         ap.addArgument("-n");
         ap.addArgument("-d");
         ap.addArgument("-w");
-        ap.addArgument("-g");
+        ap.addArgument("-g").nargs("?").setConst("x");
     }
 
     public Namespace parseArguments(String[] args) throws ArgumentParserException {

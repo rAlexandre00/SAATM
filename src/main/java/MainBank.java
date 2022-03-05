@@ -103,7 +103,7 @@ public class MainBank {
         public void run(){
             try{
                 setupStreams();
-                communication();
+                //communication();
             } catch (IOException e) {
                 e.printStackTrace();
             }finally {
@@ -135,6 +135,9 @@ public class MainBank {
 
         MainBank mb = new MainBank(authFile);
         mb.startRunning(port);
+
+
+
     }
 
 }

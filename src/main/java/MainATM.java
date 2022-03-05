@@ -30,9 +30,9 @@ public class MainATM {
 
     }
 
-    public static void startRunning(String cardFileName, String ip, int port) throws IOException {
+    public static void startRunning(String authFileName, String ip, int port) throws IOException {
         try{
-            serverCert = loadCardFile(cardFileName);
+            serverCert = loadAuthFile(authFileName);
             connectToServer(ip, port);
         }catch (EOFException e){
             System.out.println("\nATM terminated connection");
@@ -41,9 +41,9 @@ public class MainATM {
         }
     }
 
-    private static Certificate loadCardFile(String cardFileName) throws CertificateException, IOException {
+    private static Certificate loadAuthFile(String authFileName) throws CertificateException, IOException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance(X509);
-        FileInputStream fis = new FileInputStream(cardFileName);
+        FileInputStream fis = new FileInputStream(authFileName);
         Certificate certificate = certificateFactory.generateCertificate(fis);
         fis.close();
         return certificate;
@@ -83,10 +83,11 @@ public class MainATM {
 
             String ip = ns.getString("i");
             int port = Integer.parseInt(ns.getString("p"));
-            String cardFileName = ns.getString("s");
+            String authFileName = ns.getString("s");
             String accName = ns.getString("a");
+            String cardFile = ""; // TODO
 
-            startRunning(cardFileName, ip, port);
+            startRunning(authFileName, ip, port);
 
 
             if (ns.getString("n") != null){
@@ -106,7 +107,7 @@ public class MainATM {
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(cardFileName, accName, amount);
+                DepositMessage msg = new DepositMessage(cardFile, accName, amount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -117,7 +118,7 @@ public class MainATM {
                     System.exit(255);
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
-                WithdrawMessage msg = new WithdrawMessage(cardFileName, accName, wAmount);
+                WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -126,7 +127,7 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(cardFileName, accName), s);
+                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s);
                 operationDone = true;
             }
 

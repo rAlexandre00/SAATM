@@ -8,6 +8,7 @@ import messages.*;
 
 import java.net.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.GeneralSecurityException;
@@ -17,10 +18,9 @@ import java.security.cert.CertificateEncodingException;
 public class MainBank {
 
     private ServerSocket ss;
-
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
 
-    public MainBank(String authFile){
+    public MainBank(String authFile) throws IOException {
         messageHandler(DepositMessage.MSG_CODE, this::depositMessage);
         messageHandler(GetBalanceMessage.MSG_CODE, this::getBalanceMessage);
         messageHandler(NewAccountMessage.MSG_CODE, this::newAccountMessage);
@@ -41,22 +41,42 @@ public class MainBank {
             e.printStackTrace();
         }
 
+        ss = new ServerSocket(3000);
+
     }
 
-    private void withdrawMessage(WithdrawMessage msg) {
+    private void withdrawMessage(WithdrawMessage msg, OutputStream os) throws IOException {
+
+        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
         System.out.println(msg);
+        os.write("RECEIVED WITHDRAW".getBytes(StandardCharsets.UTF_8));
+        os.close();
     }
 
-    private void newAccountMessage(NewAccountMessage msg) {
+    private void newAccountMessage(NewAccountMessage msg, OutputStream os) throws IOException {
+
+        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
         System.out.println(msg);
+        os.write("RECEIVED NEWACCOUNT".getBytes(StandardCharsets.UTF_8));
+        os.close();
     }
 
-    private void getBalanceMessage(GetBalanceMessage msg) {
+    private void getBalanceMessage(GetBalanceMessage msg, OutputStream os) throws IOException {
+
+        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
         System.out.println(msg);
+        os.write("RECEIVED GETBALANCE".getBytes(StandardCharsets.UTF_8));
+        os.close();
     }
 
-    private void depositMessage(DepositMessage msg) {
+    private void depositMessage(DepositMessage msg, OutputStream os) throws IOException {
+
+
+
+        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
         System.out.println(msg);
+        os.write("RECEIVED DEPOSIT".getBytes(StandardCharsets.UTF_8));
+        os.close();
     }
 
     private class ATMHandler extends Thread {
@@ -70,6 +90,7 @@ public class MainBank {
         public void run() {
             try {
                 InputStream is = s.getInputStream();
+                OutputStream os = s.getOutputStream();
                 ObjectInputStream objInput = new ObjectInputStream(is);
 
                 Message m = (Message) objInput.readObject();
@@ -78,7 +99,7 @@ public class MainBank {
                     Handler h = handlers.get(m.getId());
                     new Thread(() -> {
                         try {
-                            h.handle(m);
+                            h.handle(m, os);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -94,7 +115,6 @@ public class MainBank {
 
     public void startRunning(String port){
         try{
-            ss = new ServerSocket(Integer.parseInt(port));
             while (true) {
                 try{
                     try {

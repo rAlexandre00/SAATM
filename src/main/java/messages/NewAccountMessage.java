@@ -13,4 +13,20 @@ public class NewAccountMessage extends Message implements Serializable {
         this.account = account;
         this.balance = balance;
     }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    @Override
+    public String toString() {
+        return "NewAccountMessage{" +
+                "account='" + account + '\'' +
+                ", balance=" + balance +
+                '}';
+    }
 }

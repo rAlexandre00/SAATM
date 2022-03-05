@@ -18,4 +18,14 @@ public class TransportFactory {
 
     }
 
+    static <V extends Message> void sendMessage(V msg, Socket socket)  {
+        try {
+            ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
+            objOut.writeObject(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 }

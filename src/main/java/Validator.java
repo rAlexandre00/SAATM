@@ -4,7 +4,7 @@ import com.google.common.net.InetAddresses;
 public class Validator {
 
     public static boolean validateNumericInputs(String number) {
-        return Pattern.matches("0|[1-9][0-9]*", number);
+        return Pattern.matches("(0|[1-9][0-9]*)", number);
     }
 
     //TODO:

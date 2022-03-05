@@ -7,9 +7,19 @@ public class GetBalanceMessage extends Message implements Serializable {
 
     private String account;
 
-    public GetBalanceMessage(String account, double amount) {
+    public GetBalanceMessage(String account) {
         super(MSG_CODE);
         this.account = account;
     }
 
+    @Override
+    public String toString() {
+        return "GetBalanceMessage{" +
+                "account='" + account + '\'' +
+                '}';
+    }
+
+    public String getAccount() {
+        return account;
+    }
 }

@@ -1,4 +1,8 @@
+import bank.Bank;
 import bank.Parser;
+import exception.AccountCardFileNotValidException;
+import exception.AccountNameNotUniqueException;
+import exception.InsufficientAccountBalanceException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import sun.security.x509.X509CertImpl;
@@ -19,6 +23,7 @@ public class MainBank {
 
     private ServerSocket ss;
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
+    private Bank bank = new Bank();
 
     public MainBank(String authFile) throws IOException {
         messageHandler(DepositMessage.MSG_CODE, this::depositMessage);
@@ -47,36 +52,49 @@ public class MainBank {
 
     private void withdrawMessage(WithdrawMessage msg, OutputStream os) throws IOException {
 
-        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
-        System.out.println(msg);
-        os.write("RECEIVED WITHDRAW".getBytes(StandardCharsets.UTF_8));
-        os.close();
+        try {
+            String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
+            os.write(response.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (AccountCardFileNotValidException e) {
+            e.printStackTrace();
+        } catch (InsufficientAccountBalanceException e) {
+            e.printStackTrace();
+        }
     }
 
     private void newAccountMessage(NewAccountMessage msg, OutputStream os) throws IOException {
 
-        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
-        System.out.println(msg);
-        os.write("RECEIVED NEWACCOUNT".getBytes(StandardCharsets.UTF_8));
-        os.close();
+        try {
+            String response = bank.createAccount(msg.getAccount(), msg.getBalance());
+            os.write(response.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (AccountNameNotUniqueException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void getBalanceMessage(GetBalanceMessage msg, OutputStream os) throws IOException {
 
-        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
-        System.out.println(msg);
-        os.write("RECEIVED GETBALANCE".getBytes(StandardCharsets.UTF_8));
-        os.close();
+        try {
+            String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
+            os.write(response.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (AccountCardFileNotValidException e) {
+            e.printStackTrace();
+        }
     }
 
     private void depositMessage(DepositMessage msg, OutputStream os) throws IOException {
 
-
-
-        // isto é apenas para testar... do lado do ATM ele vai receber a msg :)
-        System.out.println(msg);
-        os.write("RECEIVED DEPOSIT".getBytes(StandardCharsets.UTF_8));
-        os.close();
+        try {
+            String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
+            os.write(response.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (AccountCardFileNotValidException e) {
+            e.printStackTrace();
+        }
     }
 
     private class ATMHandler extends Thread {

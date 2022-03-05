@@ -95,7 +95,7 @@ public class MainATM {
                     System.exit(255);
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
-                NewAccountMessage msg = new NewAccountMessage(cardFileName, accName, iBalance);
+                NewAccountMessage msg = new NewAccountMessage(accName, iBalance);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }

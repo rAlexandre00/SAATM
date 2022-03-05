@@ -22,27 +22,46 @@ repositories {
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     compile 'com.google.guava:guava:23.0'
+    compile 'net.sourceforge.argparse4j:argparse4j:0.9.0'
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
 }
 
 task(runATM, dependsOn: 'classes', type: JavaExec) {
-   main = 'MainATM'
-   classpath = sourceSets.main.runtimeClasspath
-   if(project.hasProperty('myargs')){
-        args(myargs.split(','))
-   }
+    main = 'MainATM'
+    classpath = sourceSets.main.runtimeClasspath
+    if(project.hasProperty('args')){
+       List parsedArgs = project.args.split(' ')
+       parsedArgs.removeIf {
+           x -> x == ""
+       }
+       args(parsedArgs)
+    }
 }
 
 task(runBank, dependsOn: 'classes', type: JavaExec) {
-   main = 'MainBank'
-   classpath = sourceSets.main.runtimeClasspath
-   if(project.hasProperty('myargs')){
-        args(myargs.split(','))
-   }
+    main = 'MainBank'
+    classpath = sourceSets.main.runtimeClasspath
+    if(project.hasProperty('args')){
+        List parsedArgs = project.args.split(' ')
+        parsedArgs.removeIf {
+            x -> x == ""
+        }
+        args(parsedArgs)
+    }
+}
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'MainATM'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 // Define the main class for the application
-mainClassName = 'App'
+mainClassName = 'MainATM'
 

@@ -32,7 +32,6 @@ public class MainATM {
 
     public static void startRunning(String cardFileName, String ip, int port) throws IOException {
         try{
-
             serverCert = loadCardFile(cardFileName);
             connectToServer(ip, port);
         }catch (EOFException e){
@@ -96,7 +95,7 @@ public class MainATM {
                     System.exit(255);
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
-                NewAccountMessage msg = new NewAccountMessage(accName, iBalance);
+                NewAccountMessage msg = new NewAccountMessage(cardFileName, accName, iBalance);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -107,7 +106,7 @@ public class MainATM {
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(accName, amount);
+                DepositMessage msg = new DepositMessage(cardFileName, accName, amount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -118,7 +117,7 @@ public class MainATM {
                     System.exit(255);
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
-                WithdrawMessage msg = new WithdrawMessage(accName, wAmount);
+                WithdrawMessage msg = new WithdrawMessage(cardFileName, accName, wAmount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -127,7 +126,7 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(accName), s);
+                TransportFactory.sendMessage(new GetBalanceMessage(cardFileName, accName), s);
                 operationDone = true;
             }
 

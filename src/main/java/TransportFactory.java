@@ -1,8 +1,18 @@
+import messages.EncryptedMessage;
 import messages.Message;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 
 public class TransportFactory {
 
@@ -23,6 +33,17 @@ public class TransportFactory {
             ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
             objOut.writeObject(msg);
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    static <V extends Message> void sendMessage(V msg, Socket socket, Key key)  {
+        try {
+            EncryptedMessage encMsg = new EncryptedMessage(msg, key);
+            ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
+            objOut.writeObject(encMsg);
+        } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
             e.printStackTrace();
         }
 

@@ -10,9 +10,14 @@ import sun.security.x509.X509CertImpl;
 import handlers.Handler;
 import messages.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.net.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.GeneralSecurityException;
@@ -24,14 +29,16 @@ public class MainBank {
     private ServerSocket ss;
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
     private Bank bank = new Bank();
+    private KeyPair kp = null;
 
     public MainBank(String authFile) throws IOException {
         messageHandler(DepositMessage.MSG_CODE, this::depositMessage);
         messageHandler(GetBalanceMessage.MSG_CODE, this::getBalanceMessage);
         messageHandler(NewAccountMessage.MSG_CODE, this::newAccountMessage);
         messageHandler(WithdrawMessage.MSG_CODE, this::withdrawMessage);
+        messageHandler(EncryptedMessage.MSG_CODE, this::encryptedMessage);
 
-        KeyPair kp = Encryption.generateKeyPair();
+        kp = Encryption.generateKeyPair();
         X509CertImpl cert = null;
         System.out.println("Generating Auth File...\n");
         try {
@@ -48,6 +55,22 @@ public class MainBank {
 
         ss = new ServerSocket(3000);
 
+    }
+
+    private void encryptedMessage(EncryptedMessage msg, OutputStream os) {
+
+        try {
+            Message m = msg.decrypt(kp.getPrivate());
+
+            if (handlers.containsKey(m.getId())) {
+                Handler h = handlers.get(m.getId());
+                h.handle(m, os);
+            } else {
+                System.out.println(m);
+            }
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void withdrawMessage(WithdrawMessage msg, OutputStream os) throws IOException {

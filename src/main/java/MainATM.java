@@ -24,7 +24,7 @@ public class MainATM {
     public static final String X509 = "X.509";
 
     private static Socket s;
-    private static Certificate serverCert;
+    public static Certificate serverCert;
 
     public MainATM(){
 
@@ -127,7 +127,7 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s);
+                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
@@ -141,7 +141,7 @@ public class MainATM {
 
 
         } catch (ArgumentParserException e) {
-            System.err.println("Error reading program arguments"); //Help request should be a valid request?
+            System.err.println("Error reading program arguments " + e.getMessage()); //Help request should be a valid request?
             System.exit(255);
         }
 

@@ -50,6 +50,7 @@ public class MainATM {
     private static void connectToServer(String ip, int port) throws IOException{
         System.out.println("Attempting connection...\n");
         s = new Socket(ip, port);
+        s.setSoTimeout(10000);
         System.out.println("Connected to: " + s.getInetAddress());
     }
 
@@ -141,7 +142,11 @@ public class MainATM {
                 System.exit(255);
             }
 
-            System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
+            try {
+                System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
+            } catch (SocketTimeoutException e) {
+                System.exit(63);
+            }
 
 
         } catch (ArgumentParserException e) {

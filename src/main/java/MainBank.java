@@ -83,7 +83,7 @@ public class MainBank {
             System.out.println(response);
             Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountCardFileNotValidException | InsufficientAccountBalanceException e) {
-            e.printStackTrace();
+            System.err.println("Error:" + e.getMessage());
         }
     }
 
@@ -94,7 +94,7 @@ public class MainBank {
             System.out.println(response);
             Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountNameNotUniqueException e) {
-            e.printStackTrace();
+            System.err.println("Error:" + e.getMessage());
         }
 
     }
@@ -106,7 +106,7 @@ public class MainBank {
             System.out.println(response);
             Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountCardFileNotValidException e) {
-            e.printStackTrace();
+            System.err.println("Error:" + e.getMessage());
         }
     }
 
@@ -117,7 +117,7 @@ public class MainBank {
             System.out.println(response);
             Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountCardFileNotValidException e) {
-            e.printStackTrace();
+            System.err.println("Error:" + e.getMessage());
         }
     }
 

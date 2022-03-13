@@ -11,17 +11,16 @@ import handlers.Handler;
 import messages.*;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
 import java.net.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.cert.CertificateEncodingException;
 
 public class MainBank {
@@ -61,6 +60,10 @@ public class MainBank {
 
         try {
             Message m = msg.decrypt(kp.getPrivate());
+            if(!msg.verifyChecksum(m)) {
+                System.err.println("Message checksum is not valid");
+                return;
+            }
 
             if (handlers.containsKey(m.getId())) {
                 Handler h = handlers.get(m.getId());
@@ -77,11 +80,9 @@ public class MainBank {
 
         try {
             String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            os.write(response.getBytes(StandardCharsets.UTF_8));
-            os.close();
-        } catch (AccountCardFileNotValidException e) {
-            e.printStackTrace();
-        } catch (InsufficientAccountBalanceException e) {
+            System.out.println(response);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
+        } catch (AccountCardFileNotValidException | InsufficientAccountBalanceException e) {
             e.printStackTrace();
         }
     }
@@ -90,8 +91,8 @@ public class MainBank {
 
         try {
             String response = bank.createAccount(msg.getAccount(), msg.getBalance());
-            os.write(response.getBytes(StandardCharsets.UTF_8));
-            os.close();
+            System.out.println(response);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountNameNotUniqueException e) {
             e.printStackTrace();
         }
@@ -102,8 +103,8 @@ public class MainBank {
 
         try {
             String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
-            os.write(response.getBytes(StandardCharsets.UTF_8));
-            os.close();
+            System.out.println(response);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountCardFileNotValidException e) {
             e.printStackTrace();
         }
@@ -113,8 +114,8 @@ public class MainBank {
 
         try {
             String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            os.write(response.getBytes(StandardCharsets.UTF_8));
-            os.close();
+            System.out.println(response);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIV());
         } catch (AccountCardFileNotValidException e) {
             e.printStackTrace();
         }

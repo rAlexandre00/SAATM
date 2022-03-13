@@ -18,7 +18,7 @@ public class Validator {
             return false;
         }
 
-        return Pattern.matches("[_\\-.0-9a-z]*", filename);
+        return Pattern.matches("[_\\-.0-9a-zA-Z]*", filename);
     }
 
     public static boolean validateAccountNames(String accName) {
@@ -27,7 +27,7 @@ public class Validator {
             return false;
         }
 
-        return Pattern.matches("[_\\-.0-9a-z]*", accName); // same set of characters of filenames...
+        return Pattern.matches("[_0-9a-zA-Z]*", accName);
     }
 
     public static boolean validateIP(String ip) {

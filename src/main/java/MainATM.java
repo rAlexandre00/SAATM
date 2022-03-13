@@ -1,19 +1,17 @@
 import atm.Parser;
-import exception.AccountCardFileNotValidException;
-import exception.AccountNameNotUniqueException;
-import exception.InsufficientAccountBalanceException;
 import messages.DepositMessage;
 import messages.GetBalanceMessage;
 import messages.NewAccountMessage;
 import messages.WithdrawMessage;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import sun.misc.IOUtils;
 
-import java.awt.*;
+import javax.crypto.KeyGenerator;
 import java.net.*;
 import java.io.*;
-import java.security.PublicKey;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -30,7 +28,7 @@ public class MainATM {
 
     }
 
-    public static void startRunning(String authFileName, String ip, int port) throws IOException {
+    public static void startRunning(String authFileName, String ip, int port) {
         try{
             serverCert = loadAuthFile(authFileName);
             connectToServer(ip, port);
@@ -58,26 +56,29 @@ public class MainATM {
     public static void main(String[] args) throws IOException {
         Parser ap = new Parser();
         Namespace ns = null;
-        Validator vld = new Validator();
         boolean operationDone = false;
         try {
-            if (vld.validateArgs(args) == false){
+            if (!Validator.validateArgs(args)){
                 System.exit(255);
             }else{
                 ns = ap.parseArguments(args);
                 System.out.println(ns.getAttrs());
             }
 
-            if (vld.validateIP(ns.getString("i")) == false){
+            if (!Validator.validateIP(ns.getString("i"))){
+                System.err.println("Invalid IP");
                 System.exit(255);
             }
-            if (vld.validatePort(ns.getString("p")) == false){
+            if (!Validator.validatePort(ns.getString("p"))){
+                System.err.println("Invalid port");
                 System.exit(255);
             }
-            if (vld.validateFileNames(ns.getString("s")) == false){
+            if (!Validator.validateFileNames(ns.getString("s"))){
+                System.err.println("Invalid file name");
                 System.exit(255);
             }
-            if (vld.validateAccountNames(ns.getString("a")) == false){
+            if (!Validator.validateAccountNames(ns.getString("a"))){
+                System.err.println("Invalid account name");
                 System.exit(255);
             }
 
@@ -89,36 +90,41 @@ public class MainATM {
 
             startRunning(authFileName, ip, port);
 
+            // Generate symmetric key to receive a response
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(256, SecureRandom.getInstanceStrong());
+            Key symmKey = keyGen.generateKey();
+            byte[] iv = Encryption.getRandomNonce(12);
 
             if (ns.getString("n") != null){
 
-                if (vld.validateNumericInputs(ns.getString("n")) == false)
+                if (!Validator.validateNumericInputs(ns.getString("n")))
                     System.exit(255);
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
-                NewAccountMessage msg = new NewAccountMessage(accName, iBalance);
+                NewAccountMessage msg = new NewAccountMessage(symmKey, iv, accName, iBalance);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
 
             if (ns.getString("d") != null){
 
-                if(operationDone || vld.validateNumericInputs(ns.getString("d")) == false)
+                if(operationDone || !Validator.validateNumericInputs(ns.getString("d")))
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(cardFile, accName, amount);
+                DepositMessage msg = new DepositMessage(symmKey, iv, cardFile, accName, amount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
 
             if (ns.getString("w") != null) {
 
-                if (operationDone || vld.validateNumericInputs(ns.getString("w")) == false)
+                if (operationDone || !Validator.validateNumericInputs(ns.getString("w")))
                     System.exit(255);
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
-                WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
+                WithdrawMessage msg = new WithdrawMessage(symmKey, iv, cardFile, accName, wAmount);
                 TransportFactory.sendMessage(msg, s);
                 operationDone = true;
             }
@@ -127,7 +133,7 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s, serverCert.getPublicKey());
+                TransportFactory.sendMessage(new GetBalanceMessage(symmKey, iv, cardFile, accName), s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
@@ -135,15 +141,17 @@ public class MainATM {
                 System.exit(255);
             }
 
-            InputStream in = s.getInputStream();
-            BufferedReader r = new BufferedReader(new InputStreamReader(in));
-            System.out.println(r.readLine()); // print what server sends us :)
+            System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
 
 
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments " + e.getMessage()); //Help request should be a valid request?
             System.exit(255);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(255);
         }
 
     }
+
 }

@@ -103,8 +103,8 @@ public class MainATM {
                     System.exit(255);
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
-                NewAccountMessage msg = new NewAccountMessage(symmKey, iv, accName, iBalance);
-                TransportFactory.sendMessage(msg, s);
+                NewAccountMessage msg = new NewAccountMessage(accName, iBalance);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
                 operationDone = true;
             }
 
@@ -114,8 +114,8 @@ public class MainATM {
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(symmKey, iv, cardFile, accName, amount);
-                TransportFactory.sendMessage(msg, s);
+                DepositMessage msg = new DepositMessage(cardFile, accName, amount);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
                 operationDone = true;
             }
 
@@ -126,7 +126,7 @@ public class MainATM {
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
                 WithdrawMessage msg = new WithdrawMessage(symmKey, iv, cardFile, accName, wAmount);
-                TransportFactory.sendMessage(msg, s);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
                 operationDone = true;
             }
 
@@ -134,7 +134,7 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(symmKey, iv, cardFile, accName), s, serverCert.getPublicKey());
+                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s, serverCert.getPublicKey(), symmKey, iv);
                 operationDone = true;
             }
 

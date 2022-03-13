@@ -10,16 +10,12 @@ public class NewAccountMessage extends Message implements Serializable {
     private String account;
     private double balance;
     private String cardFile;
-    private Key symmKey;
-    private byte[] IV;
 
-    public NewAccountMessage(Key symmKey, byte[] IV, String account, double balance) {
+    public NewAccountMessage(String account, double balance) {
         super(MSG_CODE);
         this.account = account;
         this.balance = balance;
         this.cardFile = UUID.randomUUID().toString();
-        this.symmKey = symmKey;
-        this.IV = IV;
     }
 
     public String getAccount() {
@@ -38,9 +34,4 @@ public class NewAccountMessage extends Message implements Serializable {
                 '}';
     }
 
-    public Key getSymmKey() { return symmKey; }
-
-    public byte[] getIV() {
-        return IV;
-    }
 }

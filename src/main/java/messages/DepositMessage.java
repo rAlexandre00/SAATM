@@ -9,16 +9,12 @@ public class DepositMessage extends Message implements Serializable {
     private String cardFile;
     private String account;
     private double amount;
-    private Key symmKey;
-    private byte[] IV;
 
-    public DepositMessage(Key symmKey, byte[] IV, String cardFile, String account, double amount) {
+    public DepositMessage(String cardFile, String account, double amount) {
         super(MSG_CODE);
         this.cardFile = cardFile;
         this.account = account;
         this.amount = amount;
-        this.symmKey = symmKey;
-        this.IV = IV;
     }
 
     public String getCardFile() {
@@ -33,8 +29,6 @@ public class DepositMessage extends Message implements Serializable {
         return amount;
     }
 
-    public Key getSymmKey() { return symmKey; }
-
     @Override
     public String toString() {
         return "DepositMessage{" +
@@ -44,7 +38,4 @@ public class DepositMessage extends Message implements Serializable {
                 '}';
     }
 
-    public byte[] getIV() {
-        return IV;
-    }
 }

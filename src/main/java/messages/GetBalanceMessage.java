@@ -8,15 +8,11 @@ public class GetBalanceMessage extends Message implements Serializable {
 
     private String cardFile;
     private String account;
-    private Key symmKey;
-    private byte[] IV;
 
-    public GetBalanceMessage(Key symmKey, byte[] IV, String cardFile, String account) {
+    public GetBalanceMessage(String cardFile, String account) {
         super(MSG_CODE);
         this.cardFile = cardFile;
         this.account = account;
-        this.symmKey = symmKey;
-        this.IV = IV;
     }
 
     @Override
@@ -35,9 +31,4 @@ public class GetBalanceMessage extends Message implements Serializable {
         return account;
     }
 
-    public Key getSymmKey() { return symmKey; }
-
-    public byte[] getIV() {
-        return IV;
-    }
 }

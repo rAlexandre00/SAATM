@@ -53,7 +53,7 @@ public class MainBank {
         }
 
         ss = new ServerSocket(3000);
-
+        ss.setSoTimeout(10000);
     }
 
     private void encryptedMessage(EncryptedMessage msg, OutputStream os) {
@@ -76,46 +76,46 @@ public class MainBank {
         }
     }
 
-    private void withdrawMessage(WithdrawMessage msg, OutputStream os, Key key, byte[] iv) throws IOException {
+    private void withdrawMessage(WithdrawMessage msg, OutputStream os) throws IOException {
 
         try {
             String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
             System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, key, iv);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
         } catch (AccountCardFileNotValidException | InsufficientAccountBalanceException e) {
             System.err.println("Error:" + e.getMessage());
         }
     }
 
-    private void newAccountMessage(NewAccountMessage msg, OutputStream os, Key key, byte[] iv) throws IOException {
+    private void newAccountMessage(NewAccountMessage msg, OutputStream os) throws IOException {
 
         try {
-            String response = bank.createAccount(msg.getAccount(), msg.getBalance());
+            String response = bank.createAccount(msg.getAccount(), msg.getCardFile(), msg.getBalance());
             System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, key, iv);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
         } catch (AccountNameNotUniqueException e) {
             System.err.println("Error:" + e.getMessage());
         }
 
     }
 
-    private void getBalanceMessage(GetBalanceMessage msg, OutputStream os, Key key, byte[] iv) throws IOException {
+    private void getBalanceMessage(GetBalanceMessage msg, OutputStream os) throws IOException {
 
         try {
             String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
             System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, key, iv);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
         }
     }
 
-    private void depositMessage(DepositMessage msg, OutputStream os, Key key, byte[] iv) throws IOException {
+    private void depositMessage(DepositMessage msg, OutputStream os) throws IOException {
 
         try {
             String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
             System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, key, iv);
+            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
         }

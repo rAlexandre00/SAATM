@@ -1,5 +1,6 @@
 package messages;
 
+import java.io.File;
 import java.io.Serializable;
 import java.security.Key;
 import java.util.UUID;
@@ -11,11 +12,11 @@ public class NewAccountMessage extends Message implements Serializable {
     private double balance;
     private String cardFile;
 
-    public NewAccountMessage(String account, double balance) {
-        super(MSG_CODE);
+    public NewAccountMessage(Key key, byte[] iv, String account, double balance, String cardFile) {
+        super(MSG_CODE, key, iv);
         this.account = account;
         this.balance = balance;
-        this.cardFile = UUID.randomUUID().toString();
+        this.cardFile = cardFile;
     }
 
     public String getAccount() {
@@ -26,12 +27,16 @@ public class NewAccountMessage extends Message implements Serializable {
         return balance;
     }
 
+    public String getCardFile() {
+        return cardFile;
+    }
+
     @Override
     public String toString() {
         return "NewAccountMessage{" +
-                ", account='" + account + '\'' +
+                "account='" + account + '\'' +
                 ", balance=" + balance +
+                ", cardFile='" + cardFile + '\'' +
                 '}';
     }
-
 }

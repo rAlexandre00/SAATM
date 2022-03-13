@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.regex.*;
 import com.google.common.net.InetAddresses;
 
@@ -42,5 +43,23 @@ public class Validator {
         catch(NumberFormatException exp) {
             return false;
         }
+    }
+
+    public static boolean validateCurrency(String currency) {
+
+        String[] fractionalAmount = currency.split("\\.");
+
+        System.out.println(Arrays.toString(fractionalAmount));
+
+        if(fractionalAmount.length != 2)
+            return false;
+
+        System.out.println(Pattern.matches("[0-9]{2}", fractionalAmount[1]));
+        if(!Pattern.matches("[0-9]{2}", fractionalAmount[1]))
+            return false;
+
+        double d = Double.parseDouble(currency);
+
+        return !(d < 0.00) && !(d > 4294967295.99);
     }
 }

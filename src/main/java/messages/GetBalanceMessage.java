@@ -9,8 +9,8 @@ public class GetBalanceMessage extends Message implements Serializable {
     private String cardFile;
     private String account;
 
-    public GetBalanceMessage(String cardFile, String account) {
-        super(MSG_CODE);
+    public GetBalanceMessage(Key key, byte[] iv, String cardFile, String account) {
+        super(MSG_CODE, key, iv);
         this.cardFile = cardFile;
         this.account = account;
     }

@@ -9,16 +9,12 @@ public class WithdrawMessage extends Message implements Serializable {
     private String cardFile;
     private String account;
     private double amount;
-    private Key symmKey;
-    private byte[] IV;
 
-    public WithdrawMessage(Key symmKey, byte[] IV, String cardFile, String account, double amount) {
-        super(MSG_CODE);
+    public WithdrawMessage(Key key, byte[] iv, String cardFile, String account, double amount) {
+        super(MSG_CODE, key, iv);
         this.cardFile = cardFile;
         this.account = account;
         this.amount = amount;
-        this.symmKey = symmKey;
-        this.IV = IV;
     }
 
     public String getCardFile() {
@@ -41,8 +37,4 @@ public class WithdrawMessage extends Message implements Serializable {
                 ", amount=" + amount +
                 '}';
     }
-
-    public Key getSymmKey() { return symmKey; }
-
-    public byte[] getIV() { return IV; }
 }

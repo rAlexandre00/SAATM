@@ -6,10 +6,7 @@ import exception.AccountNameNotUniqueException;
 import exception.InsufficientAccountBalanceException;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class Bank {
 
@@ -29,16 +26,14 @@ public class Bank {
      * @return result of the operation in JSON format
      * @throws AccountNameNotUniqueException if there is already an account with the name indicated
      */
-    public String createAccount(String accountName, double initialBalance) throws AccountNameNotUniqueException {
+    public String createAccount(String accountName, String cardFile, double initialBalance) throws AccountNameNotUniqueException {
         if(accounts.containsKey(accountName))
             throw new AccountNameNotUniqueException("Account name " + accountName + " already exists");
 
         byte[] cardHash;
         do {
-            // Generate a UID to serve as a card
-            String uniqueCard = UUID.randomUUID().toString();
             // Generate a hash of the card
-            cardHash = Hashing.sha256().hashString(uniqueCard, StandardCharsets.UTF_8).asBytes();
+            cardHash = Hashing.sha256().hashString(cardFile, StandardCharsets.UTF_8).asBytes();
         } while (accountsCards.contains(cardHash)); // Repeat while card is not unique
 
         // Create a new account
@@ -117,7 +112,7 @@ public class Bank {
      */
     private boolean validateCardFile(String cardFile, String accountName) {
         byte[] cardHash = Hashing.sha256().hashString(cardFile, StandardCharsets.UTF_8).asBytes();
-        return accounts.get(accountName).getCardHash().equals(cardHash);
+        return Arrays.equals(accounts.get(accountName).getCardHash(), cardHash);
     }
 
 }

@@ -24,7 +24,7 @@ public class Account {
         return balance;
     }
 
-    public Object getCardHash() { return cardHash; }
+    public byte[] getCardHash() { return cardHash; }
 
     /**
      * Adds amount to account balance

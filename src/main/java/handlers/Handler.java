@@ -9,5 +9,5 @@ import java.security.Key;
 @FunctionalInterface
 public interface Handler<T extends Message> {
 
-    void handle(T m, OutputStream os, Key symmKey, byte[] iv) throws IOException;
+    void handle(T m, OutputStream os) throws IOException;
 }

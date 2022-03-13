@@ -38,12 +38,12 @@ public class TransportFactory {
 
     }
 
-    static <V extends Message> void sendMessage(V msg, Socket socket, Key pubKey, Key symmKey, byte[] iv)  {
+    static <V extends Message> void sendMessage(V msg, Socket socket, Key pubKey)  {
         try {
-            EncryptedMessage encMsg = new EncryptedMessage(msg, pubKey, symmKey, iv);
+            EncryptedMessage encMsg = new EncryptedMessage(msg, pubKey, msg.getSymmKey(), msg.getIv());
             ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
             objOut.writeObject(encMsg);
-        } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+        } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 

@@ -5,7 +5,10 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Arrays;
 
@@ -15,11 +18,9 @@ public class EncryptedMessage extends Message implements Serializable {
     private byte[] msg;
     private byte[] checksum;
     private byte[] encSymmKey;
-    private byte[] iv;
 
-    public EncryptedMessage(Message msg, Key pubKey, Key symmKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException {
-        super(MSG_CODE);
-        this.iv = iv;
+    public EncryptedMessage(Message msg, Key pubKey, Key symmKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
+        super(MSG_CODE, null, iv);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -28,14 +29,14 @@ public class EncryptedMessage extends Message implements Serializable {
 
         // Cipher msg with symm key
         byte [] data = bos.toByteArray();
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         try {
-            cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.ENCRYPT_MODE, symmKey, ivParameterSpec);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         }
-        cipher.update(data);
-        this.msg = cipher.doFinal();
+        this.msg = cipher.doFinal(data);
 
         // Cipher symm key with pub key
         cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -45,7 +46,7 @@ public class EncryptedMessage extends Message implements Serializable {
 
         // Checksum generation
         MessageDigest md = MessageDigest.getInstance("MD5");
-        this.checksum = md.digest(bos.toByteArray());
+        this.checksum = md.digest(data);
     }
 
     public Message decrypt(Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
@@ -53,20 +54,19 @@ public class EncryptedMessage extends Message implements Serializable {
         cipher.init(Cipher.DECRYPT_MODE, key);
         cipher.update(this.encSymmKey);
 
-        ByteArrayInputStream in = new ByteArrayInputStream(cipher.doFinal());
-        ObjectInputStream is = new ObjectInputStream(in);
-        Key symmKey = (Key) is.readObject();
+        byte[] symmKeyArray = cipher.doFinal();
+        Key symmKey = new SecretKeySpec(symmKeyArray, "AES");
 
-        cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         try {
-            cipher.init(Cipher.DECRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.DECRYPT_MODE, symmKey, ivParameterSpec);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         }
-        cipher.update(this.msg);
 
-        in = new ByteArrayInputStream(cipher.doFinal());
-        is = new ObjectInputStream(in);
+        ByteArrayInputStream in = new ByteArrayInputStream(cipher.doFinal(this.msg));
+        ObjectInputStream is = new ObjectInputStream(in);
         return (Message) is.readObject();
     }
 
@@ -84,26 +84,11 @@ public class EncryptedMessage extends Message implements Serializable {
     public boolean verifyChecksum(Message m) throws IOException, NoSuchAlgorithmException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(msg);
+        oos.writeObject(m);
         oos.flush();
 
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] checksum = md.digest(bos.toByteArray());
-        return checksum.equals(this.checksum);
-    }
-
-    public Key getSymmKey(Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException, InvalidKeyException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, key);
-        cipher.update(this.encSymmKey);
-
-        ByteArrayInputStream in = new ByteArrayInputStream(cipher.doFinal());
-        ObjectInputStream is = new ObjectInputStream(in);
-        Key symmKey = (Key) is.readObject();
-        return symmKey;
-    }
-
-    public byte[] getIv() {
-        return iv;
+        return Arrays.equals(this.checksum, checksum);
     }
 }

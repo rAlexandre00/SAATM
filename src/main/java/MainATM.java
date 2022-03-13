@@ -9,12 +9,15 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import javax.crypto.KeyGenerator;
 import java.net.*;
 import java.io.*;
+import java.nio.file.Files;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Scanner;
+import java.util.UUID;
 
 
 public class MainATM {
@@ -78,6 +81,10 @@ public class MainATM {
                 System.err.println("Invalid file name");
                 System.exit(255);
             }
+            if (!Validator.validateFileNames(ns.getString("c"))){
+                System.err.println("Invalid card file name");
+                System.exit(255);
+            }
             if (!Validator.validateAccountNames(ns.getString("a"))){
                 System.err.println("Invalid account name");
                 System.exit(255);
@@ -87,7 +94,6 @@ public class MainATM {
             int port = Integer.parseInt(ns.getString("p"));
             String authFileName = ns.getString("s");
             String accName = ns.getString("a");
-            String cardFile = ""; // TODO
 
             startRunning(authFileName, ip, port);
 
@@ -95,38 +101,53 @@ public class MainATM {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES");
             keyGen.init(256, SecureRandom.getInstanceStrong());
             Key symmKey = keyGen.generateKey();
-            byte[] iv = Encryption.getRandomNonce(12);
+            byte[] iv = Encryption.getRandomNonce(16);
 
             if (ns.getString("n") != null){
 
-                if (!Validator.validateNumericInputs(ns.getString("n")))
+                if (!Validator.validateCurrency(ns.getString("n")))
                     System.exit(255);
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
-                NewAccountMessage msg = new NewAccountMessage(accName, iBalance);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
+
+                String cardFile = UUID.randomUUID().toString();
+
+                File cardFile_file = new File(ns.getString("c"));
+
+                if(cardFile_file.exists()) {
+                    System.exit(255);
+                }
+
+                FileWriter cardFile_writer = new FileWriter(cardFile_file);
+                cardFile_writer.write(cardFile);
+                cardFile_writer.close();
+
+                NewAccountMessage msg = new NewAccountMessage(symmKey, iv, accName, iBalance, cardFile);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
+            String cardFile = readCardFile(ns.getString("c"));
+
             if (ns.getString("d") != null){
 
-                if(operationDone || !Validator.validateNumericInputs(ns.getString("d")))
+                if(operationDone || !Validator.validateCurrency(ns.getString("d")))
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(cardFile, accName, amount);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
+                DepositMessage msg = new DepositMessage(symmKey, iv, cardFile, accName, amount);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
             if (ns.getString("w") != null) {
 
-                if (operationDone || !Validator.validateNumericInputs(ns.getString("w")))
+                if (operationDone || !Validator.validateCurrency(ns.getString("w")))
                     System.exit(255);
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
                 WithdrawMessage msg = new WithdrawMessage(symmKey, iv, cardFile, accName, wAmount);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey(), symmKey, iv);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
@@ -134,7 +155,8 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                TransportFactory.sendMessage(new GetBalanceMessage(cardFile, accName), s, serverCert.getPublicKey(), symmKey, iv);
+                GetBalanceMessage msg = new GetBalanceMessage(symmKey, iv, cardFile, accName);
+                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
                 operationDone = true;
             }
 
@@ -142,11 +164,7 @@ public class MainATM {
                 System.exit(255);
             }
 
-            try {
-                System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
-            } catch (SocketTimeoutException e) {
-                System.exit(63);
-            }
+            System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
 
 
         } catch (ArgumentParserException e) {
@@ -157,6 +175,14 @@ public class MainATM {
             System.exit(255);
         }
 
+    }
+
+    private static String readCardFile(String cardFileName) throws FileNotFoundException {
+        // TODO verify format
+        Scanner scanner = new Scanner( new File(cardFileName) );
+        String text = scanner.nextLine();
+        scanner.close(); // Put this call in a finally block
+        return text;
     }
 
 }

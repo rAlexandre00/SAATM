@@ -3,6 +3,7 @@ import messages.DepositMessage;
 import messages.GetBalanceMessage;
 import messages.NewAccountMessage;
 import messages.WithdrawMessage;
+import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
@@ -167,6 +168,8 @@ public class MainATM {
             System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
 
 
+        } catch (HelpScreenException e) {
+            System.exit(0);
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments " + e.getMessage()); //Help request should be a valid request?
             System.exit(255);

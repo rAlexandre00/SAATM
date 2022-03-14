@@ -3,6 +3,8 @@ import bank.Parser;
 import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
 import exception.InsufficientAccountBalanceException;
+import net.sourceforge.argparse4j.helper.HelpScreenException;
+import net.sourceforge.argparse4j.impl.action.HelpArgumentAction;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import sun.security.x509.X509CertImpl;
@@ -185,8 +187,11 @@ public class MainBank {
         Namespace ns = null;
         try {
             ns = ap.parseArguments(args);
+        } catch (HelpScreenException e) {
+            System.exit(0);
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments");
+            e.printStackTrace();
             System.exit(255);
         }
         String port = ns.getString("p");

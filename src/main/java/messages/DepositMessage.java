@@ -10,8 +10,8 @@ public class DepositMessage extends Message implements Serializable {
     private String account;
     private double amount;
 
-    public DepositMessage(Key key, byte[] iv, String cardFile, String account, double amount) {
-        super(MSG_CODE, key, iv);
+    public DepositMessage(String cardFile, String account, double amount) {
+        super(MSG_CODE);
         this.cardFile = cardFile;
         this.account = account;
         this.amount = amount;

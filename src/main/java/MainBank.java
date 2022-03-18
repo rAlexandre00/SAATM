@@ -4,22 +4,19 @@ import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
 import exception.InsufficientAccountBalanceException;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
-import net.sourceforge.argparse4j.impl.action.HelpArgumentAction;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import sun.security.x509.X509CertImpl;
 
 import handlers.Handler;
 import messages.*;
+import utils.Encryption;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.GCMParameterSpec;
 import java.net.*;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +34,6 @@ public class MainBank {
         messageHandler(GetBalanceMessage.MSG_CODE, this::getBalanceMessage);
         messageHandler(NewAccountMessage.MSG_CODE, this::newAccountMessage);
         messageHandler(WithdrawMessage.MSG_CODE, this::withdrawMessage);
-        messageHandler(EncryptedMessage.MSG_CODE, this::encryptedMessage);
 
         kp = Encryption.generateKeyPair();
         X509CertImpl cert = null;
@@ -58,74 +54,67 @@ public class MainBank {
         ss.setSoTimeout(10000);
     }
 
-    private void encryptedMessage(EncryptedMessage msg, OutputStream os) {
 
-        try {
-            Message m = msg.decrypt(kp.getPrivate());
-            if(!msg.verifyChecksum(m)) {
-                System.err.println("Message checksum is not valid");
-                return;
-            }
-
-            if (handlers.containsKey(m.getId())) {
-                Handler h = handlers.get(m.getId());
-                h.handle(m, os);
-            } else {
-                System.out.println(m);
-            }
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+    private String handleMessage(Message m) throws IOException {
+        if (handlers.containsKey(m.getId())) {
+            Handler h = handlers.get(m.getId());
+            return h.handle(m);
+        } else {
+            System.out.println(m);
         }
+        return null;
     }
 
-    private void withdrawMessage(WithdrawMessage msg, OutputStream os) throws IOException {
+    private String withdrawMessage(WithdrawMessage msg) throws IOException {
 
         try {
             String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
+            return response;
         } catch (AccountCardFileNotValidException | InsufficientAccountBalanceException e) {
             System.err.println("Error:" + e.getMessage());
+            return ""; // Error message;
         }
     }
 
-    private void newAccountMessage(NewAccountMessage msg, OutputStream os) throws IOException {
+    private String newAccountMessage(NewAccountMessage msg) throws IOException {
 
         try {
             String response = bank.createAccount(msg.getAccount(), msg.getCardFile(), msg.getBalance());
-            System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
+            return response;
         } catch (AccountNameNotUniqueException e) {
             System.err.println("Error:" + e.getMessage());
+            return ""; // Error message?
         }
 
     }
 
-    private void getBalanceMessage(GetBalanceMessage msg, OutputStream os) throws IOException {
+    private String getBalanceMessage(GetBalanceMessage msg) throws IOException {
 
         try {
             String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
-            System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
+            return response;
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
+            return "";
         }
     }
 
-    private void depositMessage(DepositMessage msg, OutputStream os) throws IOException {
+    private String depositMessage(DepositMessage msg) throws IOException {
 
         try {
             String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            System.out.println(response);
-            Encryption.sendEncryptedResponse(response, os, msg.getSymmKey(), msg.getIv());
+            return response;
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
+            return "";
         }
     }
 
     private class ATMHandler extends Thread {
 
         private final Socket s;
+        private byte[] iv;
+        private Key symmetricKey;
 
         public ATMHandler(Socket socket) throws IOException {
             this.s = socket;
@@ -135,29 +124,38 @@ public class MainBank {
             try {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
-                ObjectInputStream objInput = new ObjectInputStream(is);
-
-                Message m = (Message) objInput.readObject();
-
-                if (handlers.containsKey(m.getId())) {
-                    Handler h = handlers.get(m.getId());
-                    new Thread(() -> {
-                        try {
-                            h.handle(m, os);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }).start();
-                } else {
-                    System.out.println(m);
+                /* RECEBER PEDIDO DO CLIENTE (HELLO) */
+                HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
+                System.out.println(helloMsg);
+                HelloExchangeInformation helloExchangeInformation = helloMsg.decrypt(kp.getPrivate());
+                System.out.println(helloExchangeInformation);
+                this.iv = helloExchangeInformation.getIv();
+                this.symmetricKey = helloExchangeInformation.getKey();
+                /* ENVIAR IV CIFRADO COM CHAVE PRIV AO CLIENTE */
+                TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv, this.symmetricKey), s);
+                /* RECEBER MENSAGEM (PEDIDO COM O COMANDO DO ATM) */
+                EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
+                Message m = encryptedMessage.decrypt(symmetricKey, iv);
+                System.out.println(m);
+                if(!encryptedMessage.verifyChecksum(m, symmetricKey, iv)) {
+                    System.err.println("Message checksum is not valid");
+                    System.exit(255);
                 }
-            } catch (IOException | ClassNotFoundException e) {
+
+                String response = handleMessage(m); // TRATAR DO COMANDO DO ATM
+                System.out.println(response);
+                /* ENVIAR RESPOSTA AO CLIENTE */
+                EncryptedMessage encryptedResponse = new EncryptedMessage(new ResponseMessage(response), symmetricKey, iv);
+                TransportFactory.sendMessage(encryptedResponse, os);
+                //Encryption.sendEncryptedResponse(encryptedResponse, os, symmetricKey, iv);
+
+            } catch (IOException | ClassNotFoundException | IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void startRunning(String port){
+    public void startRunning(){
         try{
             while (true) {
                 try{
@@ -207,7 +205,7 @@ public class MainBank {
             System.exit(255);
 
         MainBank mb = new MainBank(authFile);
-        mb.startRunning(port);
+        mb.startRunning();
 
     }
 

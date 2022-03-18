@@ -1,26 +1,27 @@
 package messages;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 
 public class EncryptedMessage extends Message implements Serializable {
     public final static short MSG_CODE = 5;
 
     private byte[] msg;
     private byte[] checksum;
-    private byte[] encSymmKey;
 
-    public EncryptedMessage(Message msg, Key pubKey, Key symmKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
-        super(MSG_CODE, null, iv);
+    public EncryptedMessage(Message msg, Key symmetricKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
+        super(MSG_CODE);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -32,35 +33,28 @@ public class EncryptedMessage extends Message implements Serializable {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.ENCRYPT_MODE, symmKey, ivParameterSpec);
+            cipher.init(Cipher.ENCRYPT_MODE, symmetricKey, ivParameterSpec);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         }
         this.msg = cipher.doFinal(data);
 
-        // Cipher symm key with pub key
-        cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-        cipher.update(symmKey.getEncoded());
-        this.encSymmKey = cipher.doFinal();
+        byte[] derivedKeyEncoded = deriveKey(symmetricKey, iv).getEncoded();
+        byte[] checksum = new byte[data.length + derivedKeyEncoded.length];
+        System.arraycopy(data, 0, checksum, 0, data.length);
+        System.arraycopy(derivedKeyEncoded, 0, checksum, data.length, derivedKeyEncoded.length);
 
         // Checksum generation
         MessageDigest md = MessageDigest.getInstance("MD5");
-        this.checksum = md.digest(data);
+        this.checksum = md.digest(checksum);
     }
 
-    public Message decrypt(Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, key);
-        cipher.update(this.encSymmKey);
+    public Message decrypt(Key key, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
 
-        byte[] symmKeyArray = cipher.doFinal();
-        Key symmKey = new SecretKeySpec(symmKeyArray, "AES");
-
-        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, symmKey, ivParameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         }
@@ -70,25 +64,37 @@ public class EncryptedMessage extends Message implements Serializable {
         return (Message) is.readObject();
     }
 
-    @Override
-    public String toString() {
-        return "EncryptedMessage{" +
-                "msg=" + Arrays.toString(msg) +
-                '}';
-    }
-
     public byte[] getChecksum() {
         return checksum;
     }
 
-    public boolean verifyChecksum(Message m) throws IOException, NoSuchAlgorithmException {
+    public boolean verifyChecksum(Message m, Key key, byte[] iv) throws IOException, NoSuchAlgorithmException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
         oos.writeObject(m);
         oos.flush();
 
+        byte[] derivedKeyEncoded = deriveKey(key, iv).getEncoded();
+        byte[] messageEncoded = bos.toByteArray();
+        byte[] checksum = new byte[messageEncoded.length + derivedKeyEncoded.length];
+        System.arraycopy(messageEncoded, 0, checksum, 0, messageEncoded.length);
+        System.arraycopy(derivedKeyEncoded, 0, checksum, messageEncoded.length, derivedKeyEncoded.length);
+
+        // Checksum generation
         MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] checksum = md.digest(bos.toByteArray());
-        return Arrays.equals(this.checksum, checksum);
+        return Arrays.equals(this.checksum, md.digest(checksum));
+    }
+
+    private Key deriveKey(Key key, byte[] salt) throws NoSuchAlgorithmException {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
+        KeySpec spec = new PBEKeySpec(keyString.toCharArray(), salt, 65536, 256);
+        SecretKey tmp = null;
+        try {
+            tmp = factory.generateSecret(spec);
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
 }

@@ -1,16 +1,17 @@
 import atm.Parser;
-import messages.DepositMessage;
-import messages.GetBalanceMessage;
-import messages.NewAccountMessage;
-import messages.WithdrawMessage;
+import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import utils.Encryption;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import java.net.*;
 import java.io.*;
-import java.nio.file.Files;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -98,16 +99,11 @@ public class MainATM {
 
             startRunning(authFileName, ip, port);
 
-            // Generate symmetric key to receive a response
-            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(256, SecureRandom.getInstanceStrong());
-            Key symmKey = keyGen.generateKey();
-            byte[] iv = Encryption.getRandomNonce(16);
-
             if (ns.getString("n") != null){
 
-                if (!Validator.validateCurrency(ns.getString("n")))
+                if (!Validator.validateCurrency(ns.getString("n"))) {
                     System.exit(255);
+                }
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
 
@@ -123,8 +119,9 @@ public class MainATM {
                 cardFile_writer.write(cardFile);
                 cardFile_writer.close();
 
-                NewAccountMessage msg = new NewAccountMessage(symmKey, iv, accName, iBalance, cardFile);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
+                NewAccountMessage msg = new NewAccountMessage(accName, iBalance, cardFile);
+                String response = communicateWithBank(msg, s);
+                System.out.println(response);
                 operationDone = true;
             }
 
@@ -136,8 +133,9 @@ public class MainATM {
                     System.exit(255);
 
                 double amount = Double.parseDouble(ns.getString("d"));
-                DepositMessage msg = new DepositMessage(symmKey, iv, cardFile, accName, amount);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
+                DepositMessage msg = new DepositMessage(cardFile, accName, amount);
+                String response = communicateWithBank(msg, s);
+                System.out.println(response);
                 operationDone = true;
             }
 
@@ -147,8 +145,9 @@ public class MainATM {
                     System.exit(255);
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
-                WithdrawMessage msg = new WithdrawMessage(symmKey, iv, cardFile, accName, wAmount);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
+                WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
+                String response = communicateWithBank(msg, s);
+                System.out.println(response);
                 operationDone = true;
             }
 
@@ -156,8 +155,9 @@ public class MainATM {
                 if (operationDone)
                     System.exit(255);
 
-                GetBalanceMessage msg = new GetBalanceMessage(symmKey, iv, cardFile, accName);
-                TransportFactory.sendMessage(msg, s, serverCert.getPublicKey());
+                GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
+                String response = communicateWithBank(msg, s);
+                System.out.println(response);
                 operationDone = true;
             }
 
@@ -165,7 +165,7 @@ public class MainATM {
                 System.exit(255);
             }
 
-            System.out.println(Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
+            //System.out.println(utils.Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
 
 
         } catch (HelpScreenException e) {
@@ -176,7 +176,74 @@ public class MainATM {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(255);
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
+
+    }
+
+    private static <V extends Message> String communicateWithBank(V msg, Socket s) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException, ClassNotFoundException {
+
+        InputStream is = s.getInputStream();
+        OutputStream os = s.getOutputStream();
+
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256, SecureRandom.getInstanceStrong());
+        Key symmKey = keyGen.generateKey();
+        byte[] iv = Encryption.getRandomNonce(16);
+
+        // PASSO 1
+        HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey(), iv);
+        System.out.println(helloMsg);
+        TransportFactory.sendMessage(helloMsg, os);
+        // PASSO 2
+
+        HelloReplyMessage helloReplyMessage = (HelloReplyMessage) TransportFactory.receiveMessage(is);
+        System.out.println(helloReplyMessage);
+        HelloExchangeInformation helloExchangeInformation = null;
+        try {
+            helloExchangeInformation = helloReplyMessage.decrypt(serverCert.getPublicKey());
+            System.out.println(helloExchangeInformation);
+        } catch (ClassNotFoundException e) {
+            System.err.println("The bank sent an invalid object.");
+            System.exit(255); // ? n sei se o codigo é este... TBD
+        }
+
+        if(!helloExchangeInformation.getIv().equals(iv)) {
+            // TODO iv enviado pelo servidor é diferente
+        }
+        // PASSO 3
+        System.out.println(msg);
+        EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);
+        TransportFactory.sendMessage(encryptedMessage, s);
+        // PASSO 4
+        EncryptedMessage responseEncryptedMessage = null;
+        try {
+            responseEncryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
+            ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
+            System.out.println(responseMsg);
+
+            if(!responseEncryptedMessage.verifyChecksum(responseMsg, symmKey, iv)) {
+                System.err.println("Message checksum is not valid");
+                System.exit(255);
+            }
+
+            return responseMsg.getResponse();
+
+        } catch (ClassNotFoundException e) {
+            System.err.println("The bank sent an invalid object.");
+            System.exit(255); // ? n sei se o codigo é este... TBD
+        }
+
+        return "";
 
     }
 

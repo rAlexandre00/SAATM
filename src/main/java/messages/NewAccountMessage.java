@@ -12,8 +12,8 @@ public class NewAccountMessage extends Message implements Serializable {
     private double balance;
     private String cardFile;
 
-    public NewAccountMessage(Key key, byte[] iv, String account, double balance, String cardFile) {
-        super(MSG_CODE, key, iv);
+    public NewAccountMessage(String account, double balance, String cardFile) {
+        super(MSG_CODE);
         this.account = account;
         this.balance = balance;
         this.cardFile = cardFile;

@@ -1,3 +1,7 @@
+package utils;
+
+import messages.EncryptedMessage;
+import messages.ResponseMessage;
 import sun.security.x509.*;
 
 import javax.crypto.BadPaddingException;
@@ -92,6 +96,33 @@ public class Encryption {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
             encryptedResponse = cipher.doFinal(response.getBytes());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+            return;
+        } catch (InvalidKeyException e) {
+            System.err.println("Invalid Key");
+            return;
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            System.err.println("Invalid encrypted message");
+            return;
+        }
+        os.write(encryptedResponse.length);
+        os.write(encryptedResponse);
+        os.close();
+    }
+
+    public static void sendEncryptedResponse(EncryptedMessage msg, OutputStream os, Key symmKey, byte[] iv) throws IOException {
+        byte[] encryptedResponse;
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(msg);
+        oos.flush();
+
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
+            encryptedResponse = cipher.doFinal(bos.toByteArray());
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
             e.printStackTrace();
             return;

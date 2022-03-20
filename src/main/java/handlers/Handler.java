@@ -9,5 +9,5 @@ import java.security.Key;
 @FunctionalInterface
 public interface Handler<T extends Message> {
 
-    String handle(T m) throws IOException;
+    String handle(T m);
 }

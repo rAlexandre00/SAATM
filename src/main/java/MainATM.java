@@ -9,6 +9,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import java.net.*;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -196,35 +197,24 @@ public class MainATM {
         OutputStream os = s.getOutputStream();
 
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(256, SecureRandom.getInstanceStrong());
+        keyGen.init(128, SecureRandom.getInstanceStrong());
         Key symmKey = keyGen.generateKey();
-        byte[] iv = Encryption.getRandomNonce(16);
 
-        // PASSO 1
-        HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey(), iv);
-        System.out.println(helloMsg);
+        HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
         TransportFactory.sendMessage(helloMsg, os);
-        // PASSO 2
 
         HelloReplyMessage helloReplyMessage = (HelloReplyMessage) TransportFactory.receiveMessage(is);
-        System.out.println(helloReplyMessage);
-        HelloExchangeInformation helloExchangeInformation = null;
+        byte[] iv = null;
         try {
-            helloExchangeInformation = helloReplyMessage.decrypt(serverCert.getPublicKey());
-            System.out.println(helloExchangeInformation);
+            iv = helloReplyMessage.decrypt(serverCert.getPublicKey()).getIV();
         } catch (ClassNotFoundException e) {
             System.err.println("The bank sent an invalid object.");
             System.exit(255); // ? n sei se o codigo é este... TBD
         }
 
-        if(!helloExchangeInformation.getIv().equals(iv)) {
-            // TODO iv enviado pelo servidor é diferente
-        }
-        // PASSO 3
-        System.out.println(msg);
         EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);
         TransportFactory.sendMessage(encryptedMessage, s);
-        // PASSO 4
+
         EncryptedMessage responseEncryptedMessage = null;
         try {
             responseEncryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);

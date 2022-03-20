@@ -13,54 +13,18 @@ public class HelloMessage extends Message implements Serializable {
     public final static short MSG_CODE = 10;
 
     private byte[] data;
-    private byte[] symKey; // generate randomly just to encrypt data
-    private byte[] tempIV;
 
-    public HelloMessage(Key symmetricKey, Key pubKey, byte[] iv) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public HelloMessage(Key symmetricKey, Key pubKey) {
         super(MSG_CODE);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(new HelloExchangeInformation(symmetricKey, iv));
-        oos.flush();
-        byte [] data = bos.toByteArray();
-
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(256, SecureRandom.getInstanceStrong());
-        Key symmKey = keyGen.generateKey();
-
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-        this.symKey = cipher.doFinal(symmKey.getEncoded());
-
-        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        try {
-            this.tempIV = Encryption.getRandomNonce(16);
-            IvParameterSpec ivParameterSpec = new IvParameterSpec(this.tempIV);
-            cipher.init(Cipher.ENCRYPT_MODE, symmKey, ivParameterSpec);
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        }
-        this.data = cipher.doFinal(data);
+        this.data = Encryption.encryptRSA(pubKey, symmetricKey.getEncoded());
     }
 
-    public HelloExchangeInformation decrypt(Key privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, ClassNotFoundException {
+    public Key decrypt(Key privateKey) throws IOException, ClassNotFoundException {
 
-
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        byte[] symmKeyArray = cipher.doFinal(this.symKey);
-        Key symmKey = new SecretKeySpec(symmKeyArray, "AES");
-
-        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        try {
-            IvParameterSpec ivParameterSpec = new IvParameterSpec(this.tempIV);
-            cipher.init(Cipher.DECRYPT_MODE, symmKey, ivParameterSpec);
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        }
-        ByteArrayInputStream in = new ByteArrayInputStream(cipher.doFinal(this.data));
+        byte[] data = Encryption.decryptRSA(privateKey, this.data);
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
         ObjectInputStream is = new ObjectInputStream(in);
-        return (HelloExchangeInformation) is.readObject();
+        return (Key) is.readObject();
     }
 
     public byte[] getData() {

@@ -55,7 +55,7 @@ public class MainBank {
     }
 
 
-    private String handleMessage(Message m) throws IOException {
+    private String handleMessage(Message m) {
         if (handlers.containsKey(m.getId())) {
             Handler h = handlers.get(m.getId());
             return h.handle(m);
@@ -65,7 +65,7 @@ public class MainBank {
         return null;
     }
 
-    private String withdrawMessage(WithdrawMessage msg) throws IOException {
+    private String withdrawMessage(WithdrawMessage msg)  {
 
         try {
             String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
@@ -76,7 +76,7 @@ public class MainBank {
         }
     }
 
-    private String newAccountMessage(NewAccountMessage msg) throws IOException {
+    private String newAccountMessage(NewAccountMessage msg) {
 
         try {
             String response = bank.createAccount(msg.getAccount(), msg.getCardFile(), msg.getBalance());
@@ -88,7 +88,7 @@ public class MainBank {
 
     }
 
-    private String getBalanceMessage(GetBalanceMessage msg) throws IOException {
+    private String getBalanceMessage(GetBalanceMessage msg) {
 
         try {
             String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
@@ -99,7 +99,7 @@ public class MainBank {
         }
     }
 
-    private String depositMessage(DepositMessage msg) throws IOException {
+    private String depositMessage(DepositMessage msg) {
 
         try {
             String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
@@ -113,7 +113,6 @@ public class MainBank {
     private class ATMHandler extends Thread {
 
         private final Socket s;
-        private byte[] iv;
         private Key symmetricKey;
 
         public ATMHandler(Socket socket) throws IOException {
@@ -124,34 +123,41 @@ public class MainBank {
             try {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
-                /* RECEBER PEDIDO DO CLIENTE (HELLO) */
+
+
                 HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
-                System.out.println(helloMsg);
-                HelloExchangeInformation helloExchangeInformation = helloMsg.decrypt(kp.getPrivate());
-                System.out.println(helloExchangeInformation);
-                this.iv = helloExchangeInformation.getIv();
-                this.symmetricKey = helloExchangeInformation.getKey();
-                /* ENVIAR IV CIFRADO COM CHAVE PRIV AO CLIENTE */
-                TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv, this.symmetricKey), s);
-                /* RECEBER MENSAGEM (PEDIDO COM O COMANDO DO ATM) */
+                try {
+                    assert helloMsg != null;
+                    this.symmetricKey = helloMsg.decrypt(kp.getPrivate());
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                byte[] iv = Encryption.getRandomNonce(16);
+                TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
+
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
-                Message m = encryptedMessage.decrypt(symmetricKey, iv);
-                System.out.println(m);
+                Message m = null;
+                try {
+                    assert encryptedMessage != null;
+                    m = encryptedMessage.decrypt(symmetricKey, iv);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
                 if(!encryptedMessage.verifyChecksum(m, symmetricKey, iv)) {
                     System.err.println("Message checksum is not valid");
                     System.exit(255);
                 }
 
-                String response = handleMessage(m); // TRATAR DO COMANDO DO ATM
-                System.out.println(response);
-                /* ENVIAR RESPOSTA AO CLIENTE */
+                String response = handleMessage(m);
                 EncryptedMessage encryptedResponse = new EncryptedMessage(new ResponseMessage(response), symmetricKey, iv);
                 TransportFactory.sendMessage(encryptedResponse, os);
-                //Encryption.sendEncryptedResponse(encryptedResponse, os, symmetricKey, iv);
 
-            } catch (IOException | ClassNotFoundException | IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
     }
 

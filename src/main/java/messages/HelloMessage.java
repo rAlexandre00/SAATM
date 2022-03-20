@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class HelloMessage extends Message implements Serializable {
     public final static short MSG_CODE = 10;
 
-    private byte[] data;
+    private final byte[] data;
 
     public HelloMessage(Key symmetricKey, Key pubKey) {
         super(MSG_CODE);
@@ -25,10 +25,6 @@ public class HelloMessage extends Message implements Serializable {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         ObjectInputStream is = new ObjectInputStream(in);
         return (Key) is.readObject();
-    }
-
-    public byte[] getData() {
-        return data;
     }
 
     @Override

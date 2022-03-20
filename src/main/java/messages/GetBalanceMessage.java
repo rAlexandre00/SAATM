@@ -6,8 +6,8 @@ import java.security.Key;
 public class GetBalanceMessage extends Message implements Serializable {
     public final static short MSG_CODE = 4;
 
-    private String cardFile;
-    private String account;
+    private final String cardFile;
+    private final String account;
 
     public GetBalanceMessage(String cardFile, String account) {
         super(MSG_CODE);

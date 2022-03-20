@@ -8,9 +8,9 @@ import java.util.UUID;
 public class NewAccountMessage extends Message implements Serializable {
     public final static short MSG_CODE = 1;
 
-    private String account;
-    private double balance;
-    private String cardFile;
+    private final String account;
+    private final double balance;
+    private final String cardFile;
 
     public NewAccountMessage(String account, double balance, String cardFile) {
         super(MSG_CODE);

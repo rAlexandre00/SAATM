@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class ResponseMessage extends Message implements Serializable {
     public final static short MSG_CODE = 12;
 
-    private String response;
+    private final String response;
 
     public ResponseMessage(String response) {
         super(MSG_CODE);

@@ -20,8 +20,8 @@ import java.util.Base64;
 public class EncryptedMessage extends Message implements Serializable {
     public final static short MSG_CODE = 5;
 
-    private byte[] msg;
-    private byte[] checksum;
+    private final byte[] msg;
+    private final byte[] checksum;
 
     public EncryptedMessage(Message msg, Key symmetricKey, byte[] iv) throws IOException {
         super(MSG_CODE);
@@ -33,7 +33,7 @@ public class EncryptedMessage extends Message implements Serializable {
 
         // Cipher msg with symm key
         byte [] data = bos.toByteArray();
-        Encryption.encryptAES(symmetricKey, new IvParameterSpec(iv), data);
+        this.msg = Encryption.encryptAES(symmetricKey, new IvParameterSpec(iv), data);
 
         byte[] derivedKeyEncoded = deriveKey(symmetricKey, iv).getEncoded();
         byte[] checksum = new byte[data.length + derivedKeyEncoded.length];

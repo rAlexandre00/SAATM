@@ -6,9 +6,9 @@ import java.security.Key;
 public class WithdrawMessage extends Message implements Serializable {
     public final static short MSG_CODE = 3;
 
-    private String cardFile;
-    private String account;
-    private double amount;
+    private final String cardFile;
+    private final String account;
+    private final double amount;
 
     public WithdrawMessage(String cardFile, String account, double amount) {
         super(MSG_CODE);

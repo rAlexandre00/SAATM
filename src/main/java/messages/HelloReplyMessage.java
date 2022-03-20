@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class HelloReplyMessage extends Message implements Serializable {
     public final static short MSG_CODE = 11;
 
-    private byte[] data;
+    private final byte[] data;
 
     public HelloReplyMessage(Key privateKey, byte[] iv) {
         super(MSG_CODE);

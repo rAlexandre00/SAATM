@@ -6,11 +6,11 @@ import java.security.Key;
 public class GetBalanceMessage extends Message implements Serializable {
     public final static short MSG_CODE = 4;
 
-    private String cardFile;
-    private String account;
+    private final String cardFile;
+    private final String account;
 
-    public GetBalanceMessage(Key key, byte[] iv, String cardFile, String account) {
-        super(MSG_CODE, key, iv);
+    public GetBalanceMessage(String cardFile, String account) {
+        super(MSG_CODE);
         this.cardFile = cardFile;
         this.account = account;
     }

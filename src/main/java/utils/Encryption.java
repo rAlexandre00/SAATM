@@ -1,3 +1,7 @@
+package utils;
+
+import messages.EncryptedMessage;
+import messages.ResponseMessage;
 import sun.security.x509.*;
 
 import javax.crypto.BadPaddingException;
@@ -5,6 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
@@ -15,6 +20,67 @@ import java.util.Date;
 
 @SuppressWarnings("sunapi")
 public class Encryption {
+
+    public static byte[] hash(byte[] data) {
+        MessageDigest md = null;
+
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return md.digest(data);
+    }
+
+
+    public static byte[] encryptRSA(Key key, byte[] data)  {
+        try {
+            Cipher cipher = null;
+            cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[]{};
+
+    }
+
+    public static byte[] decryptRSA(Key key, byte[] data) {
+        try {
+            Cipher cipher = null;
+            cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[]{};
+    }
+
+    public static byte[] encryptAES(Key key, IvParameterSpec iv, byte[] data) {
+        try {
+            Cipher cipher = null;
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[]{};
+    }
+
+    public static byte[] decryptAES(Key key, IvParameterSpec iv, byte[] data) {
+        try {
+            Cipher cipher = null;
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key, iv);
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[]{};
+    }
 
     /**
      * Create a self-signed X.509 Certificate
@@ -92,6 +158,33 @@ public class Encryption {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
             encryptedResponse = cipher.doFinal(response.getBytes());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+            return;
+        } catch (InvalidKeyException e) {
+            System.err.println("Invalid Key");
+            return;
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            System.err.println("Invalid encrypted message");
+            return;
+        }
+        os.write(encryptedResponse.length);
+        os.write(encryptedResponse);
+        os.close();
+    }
+
+    public static void sendEncryptedResponse(EncryptedMessage msg, OutputStream os, Key symmKey, byte[] iv) throws IOException {
+        byte[] encryptedResponse;
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(msg);
+        oos.flush();
+
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
+            encryptedResponse = cipher.doFinal(bos.toByteArray());
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
             e.printStackTrace();
             return;

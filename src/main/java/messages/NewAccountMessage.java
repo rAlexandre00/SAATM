@@ -8,12 +8,12 @@ import java.util.UUID;
 public class NewAccountMessage extends Message implements Serializable {
     public final static short MSG_CODE = 1;
 
-    private String account;
-    private double balance;
-    private String cardFile;
+    private final String account;
+    private final double balance;
+    private final String cardFile;
 
-    public NewAccountMessage(Key key, byte[] iv, String account, double balance, String cardFile) {
-        super(MSG_CODE, key, iv);
+    public NewAccountMessage(String account, double balance, String cardFile) {
+        super(MSG_CODE);
         this.account = account;
         this.balance = balance;
         this.cardFile = cardFile;

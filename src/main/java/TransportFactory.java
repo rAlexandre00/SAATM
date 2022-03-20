@@ -5,9 +5,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -35,12 +33,32 @@ public class TransportFactory {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
+    static <V extends Message> void sendMessage(V msg, OutputStream os)  {
+        try {
+            ObjectOutputStream objOut = new ObjectOutputStream(os);
+            objOut.writeObject(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static Message receiveMessage(InputStream is) {
+        try {
+            ObjectInputStream objInput = new ObjectInputStream(is);
+            return (Message) objInput.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    /*
     static <V extends Message> void sendMessage(V msg, Socket socket, Key pubKey)  {
         try {
-            EncryptedMessage encMsg = new EncryptedMessage(msg, pubKey, msg.getSymmKey(), msg.getIv());
+            EncryptedMessage encMsg = new EncryptedMessage(msg, pubKey);
             ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
             objOut.writeObject(encMsg);
         } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | ClassNotFoundException e) {
@@ -48,5 +66,6 @@ public class TransportFactory {
         }
 
     }
+     */
 
 }

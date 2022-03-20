@@ -31,7 +31,7 @@ public class EncryptedMessage extends Message implements Serializable {
         byte [] data = bos.toByteArray();
         this.msg = CipherUtils.encryptAES(symmetricKey, new IvParameterSpec(iv), data);
 
-        byte[] derivedKeyEncoded = deriveKey(symmetricKey, iv).getEncoded();
+        byte[] derivedKeyEncoded = CipherUtils.deriveKey(symmetricKey, iv).getEncoded();
         byte[] checksum = new byte[data.length + derivedKeyEncoded.length];
         System.arraycopy(data, 0, checksum, 0, data.length);
         System.arraycopy(derivedKeyEncoded, 0, checksum, data.length, derivedKeyEncoded.length);
@@ -53,35 +53,12 @@ public class EncryptedMessage extends Message implements Serializable {
         oos.writeObject(m);
         oos.flush();
 
-        byte[] derivedKeyEncoded = deriveKey(key, iv).getEncoded();
+        byte[] derivedKeyEncoded = CipherUtils.deriveKey(key, iv).getEncoded();
         byte[] messageEncoded = bos.toByteArray();
         byte[] checksum = new byte[messageEncoded.length + derivedKeyEncoded.length];
         System.arraycopy(messageEncoded, 0, checksum, 0, messageEncoded.length);
         System.arraycopy(derivedKeyEncoded, 0, checksum, messageEncoded.length, derivedKeyEncoded.length);
 
         return Arrays.equals(this.checksum, CipherUtils.hash(checksum));
-    }
-
-    /*
-        Derive a key from a given key and a salt using PBKDF2WithHmacSHA256
-     */
-    private Key deriveKey(Key key, byte[] salt)  {
-        SecretKeyFactory factory = null;
-
-        try {
-            factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-
-        String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
-        KeySpec spec = new PBEKeySpec(keyString.toCharArray(), salt, 65536, 256);
-        SecretKey tmp = null;
-        try {
-            tmp = factory.generateSecret(spec);
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        }
-        return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
 }

@@ -6,11 +6,16 @@ import sun.security.x509.*;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.*;
 import java.math.BigInteger;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Base64;
 import java.util.Date;
 
 @SuppressWarnings("sunapi")
@@ -178,5 +183,29 @@ public class CipherUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /*
+        Derive a key from a given key and a salt using PBKDF2WithHmacSHA256
+     */
+    public static Key deriveKey(Key key, byte[] salt)  {
+        SecretKeyFactory factory = null;
+
+        try {
+            factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
+        // OWASP recommended to use 310000 iterations for PBKDF2-HMAC-SHA256
+        KeySpec spec = new PBEKeySpec(keyString.toCharArray(), salt, 310000, 256);
+        SecretKey tmp = null;
+        try {
+            tmp = factory.generateSecret(spec);
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
 }

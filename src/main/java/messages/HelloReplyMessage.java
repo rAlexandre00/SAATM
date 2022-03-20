@@ -1,10 +1,8 @@
 package messages;
 
-import utils.Encryption;
+import utils.CipherUtils;
 
-import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.*;
 import java.util.Arrays;
@@ -16,11 +14,11 @@ public class HelloReplyMessage extends Message implements Serializable {
 
     public HelloReplyMessage(Key privateKey, byte[] iv) {
         super(MSG_CODE);
-        this.data = Encryption.encryptRSA(privateKey, iv);
+        this.data = CipherUtils.encryptRSA(privateKey, iv);
     }
 
     public IvParameterSpec decrypt(Key publicKey) throws ClassNotFoundException {
-        return new IvParameterSpec(Encryption.decryptRSA(publicKey, data));
+        return new IvParameterSpec(CipherUtils.decryptRSA(publicKey, data));
     }
 
     @Override

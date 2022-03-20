@@ -3,13 +3,12 @@ import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import utils.Encryption;
+import utils.CipherUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
 import java.net.*;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -103,8 +102,10 @@ public class MainATM {
             if (ns.getString("n") != null){
 
                 if (!Validator.validateCurrency(ns.getString("n"))) {
+                    System.out.println("fala dele");
                     System.exit(255);
                 }
+
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
 
@@ -166,9 +167,6 @@ public class MainATM {
                 System.exit(255);
             }
 
-            //System.out.println(utils.Encryption.receiveEncryptedResponse(s.getInputStream(), symmKey, iv)); // print what server sends us :)
-
-
         } catch (HelpScreenException e) {
             System.exit(0);
         } catch (ArgumentParserException e) {
@@ -177,15 +175,13 @@ public class MainATM {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(255);
-        } catch (NoSuchPaddingException e) {
+        } catch (NoSuchPaddingException | ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (BadPaddingException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -196,9 +192,7 @@ public class MainATM {
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128, SecureRandom.getInstanceStrong());
-        Key symmKey = keyGen.generateKey();
+        Key symmKey = CipherUtils.generateSymmetricKey();
 
         HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
         TransportFactory.sendMessage(helloMsg, os);
@@ -206,6 +200,7 @@ public class MainATM {
         HelloReplyMessage helloReplyMessage = (HelloReplyMessage) TransportFactory.receiveMessage(is);
         byte[] iv = null;
         try {
+            assert helloReplyMessage != null;
             iv = helloReplyMessage.decrypt(serverCert.getPublicKey()).getIV();
         } catch (ClassNotFoundException e) {
             System.err.println("The bank sent an invalid object.");
@@ -218,6 +213,7 @@ public class MainATM {
         EncryptedMessage responseEncryptedMessage = null;
         try {
             responseEncryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
+            assert responseEncryptedMessage != null;
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
             System.out.println(responseMsg);
 

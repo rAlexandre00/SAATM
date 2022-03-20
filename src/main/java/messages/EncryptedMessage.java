@@ -1,16 +1,12 @@
 package messages;
 
-import utils.Encryption;
+import utils.CipherUtils;
 
 import javax.crypto.*;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.swing.text.ParagraphView;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -33,19 +29,19 @@ public class EncryptedMessage extends Message implements Serializable {
 
         // Cipher msg with symm key
         byte [] data = bos.toByteArray();
-        this.msg = Encryption.encryptAES(symmetricKey, new IvParameterSpec(iv), data);
+        this.msg = CipherUtils.encryptAES(symmetricKey, new IvParameterSpec(iv), data);
 
         byte[] derivedKeyEncoded = deriveKey(symmetricKey, iv).getEncoded();
         byte[] checksum = new byte[data.length + derivedKeyEncoded.length];
         System.arraycopy(data, 0, checksum, 0, data.length);
         System.arraycopy(derivedKeyEncoded, 0, checksum, data.length, derivedKeyEncoded.length);
 
-        this.checksum = Encryption.hash(checksum);
+        this.checksum = CipherUtils.hash(checksum);
     }
 
     public Message decrypt(Key key, byte[] iv) throws IOException, ClassNotFoundException {
 
-        byte[] decrypted = Encryption.decryptAES(key, new IvParameterSpec(iv), this.msg);
+        byte[] decrypted = CipherUtils.decryptAES(key, new IvParameterSpec(iv), this.msg);
         ByteArrayInputStream in = new ByteArrayInputStream(decrypted);
         ObjectInputStream is = new ObjectInputStream(in);
         return (Message) is.readObject();
@@ -63,7 +59,7 @@ public class EncryptedMessage extends Message implements Serializable {
         System.arraycopy(messageEncoded, 0, checksum, 0, messageEncoded.length);
         System.arraycopy(derivedKeyEncoded, 0, checksum, messageEncoded.length, derivedKeyEncoded.length);
 
-        return Arrays.equals(this.checksum, Encryption.hash(checksum));
+        return Arrays.equals(this.checksum, CipherUtils.hash(checksum));
     }
 
     private Key deriveKey(Key key, byte[] salt)  {

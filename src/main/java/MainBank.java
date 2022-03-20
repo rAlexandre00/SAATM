@@ -10,11 +10,8 @@ import sun.security.x509.X509CertImpl;
 
 import handlers.Handler;
 import messages.*;
-import utils.Encryption;
+import utils.CipherUtils;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.net.*;
 import java.io.*;
 import java.security.*;
@@ -35,16 +32,16 @@ public class MainBank {
         messageHandler(NewAccountMessage.MSG_CODE, this::newAccountMessage);
         messageHandler(WithdrawMessage.MSG_CODE, this::withdrawMessage);
 
-        kp = Encryption.generateKeyPair();
+        kp = CipherUtils.generateKeyPair();
         X509CertImpl cert = null;
         System.out.println("Generating Auth File...\n");
         try {
-            cert = Encryption.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
+            cert = CipherUtils.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
         }
         try {
-            Encryption.certificateToFile(cert, authFile);
+            CipherUtils.certificateToFile(cert, authFile);
             System.out.println("Created!\n");
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
@@ -124,7 +121,6 @@ public class MainBank {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
 
-
                 HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
                 try {
                     assert helloMsg != null;
@@ -133,7 +129,7 @@ public class MainBank {
                     e.printStackTrace();
                 }
 
-                byte[] iv = Encryption.getRandomNonce(16);
+                byte[] iv = CipherUtils.getRandomNonce(16);
                 TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
 
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);

@@ -1,9 +1,7 @@
 package messages;
 
-import utils.Encryption;
+import utils.CipherUtils;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.*;
@@ -16,15 +14,13 @@ public class HelloMessage extends Message implements Serializable {
 
     public HelloMessage(Key symmetricKey, Key pubKey) {
         super(MSG_CODE);
-        this.data = Encryption.encryptRSA(pubKey, symmetricKey.getEncoded());
+        this.data = CipherUtils.encryptRSA(pubKey, symmetricKey.getEncoded());
     }
 
     public Key decrypt(Key privateKey) throws IOException, ClassNotFoundException {
 
-        byte[] data = Encryption.decryptRSA(privateKey, this.data);
-        ByteArrayInputStream in = new ByteArrayInputStream(data);
-        ObjectInputStream is = new ObjectInputStream(in);
-        return (Key) is.readObject();
+        byte[] data = CipherUtils.decryptRSA(privateKey, this.data);
+        return new SecretKeySpec(data, 0, data.length, "AES");
     }
 
     @Override

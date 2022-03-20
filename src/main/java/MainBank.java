@@ -121,6 +121,7 @@ public class MainBank {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
 
+                // Step 1: Receive Hello Message from an ATM, which contains the symmetric key
                 HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
                 try {
                     assert helloMsg != null;
@@ -129,9 +130,11 @@ public class MainBank {
                     e.printStackTrace();
                 }
 
+                // Step 2: Send the randomly generated IV to the ATM.
                 byte[] iv = CipherUtils.getRandomNonce(16);
                 TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
 
+                // Step 3: Receive the message from the ATM, decrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
                 Message m = null;
                 try {
@@ -141,14 +144,20 @@ public class MainBank {
                     e.printStackTrace();
                 }
 
+                // Verify the checksum from the message
                 if(!encryptedMessage.verifyChecksum(m, symmetricKey, iv)) {
                     System.err.println("Message checksum is not valid");
                     System.exit(255);
                 }
 
+                // Handle the message
+                assert m != null;
                 String response = handleMessage(m);
+
+                // Step 4: Send the response to the ATM, encrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedResponse = new EncryptedMessage(new ResponseMessage(response), symmetricKey, iv);
                 TransportFactory.sendMessage(encryptedResponse, os);
+                System.out.println(response);
 
             } catch (IOException e) {
                 e.printStackTrace();

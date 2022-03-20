@@ -159,7 +159,7 @@ public class MainATM {
 
                 GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
                 String response = communicateWithBank(msg, s);
-                System.out.println(response);
+                System.out.println(response); // print response
                 operationDone = true;
             }
 
@@ -192,30 +192,35 @@ public class MainATM {
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
+        // Generate symmetric key to be used in the communication
         Key symmKey = CipherUtils.generateSymmetricKey();
 
+        // Step 1: Send HelloMessage to Bank with symmetric key encrypted with bank's public key
         HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
         TransportFactory.sendMessage(helloMsg, os);
 
+        // Step 2: Receive HelloReplyMessage with contains the iv that will be used to encrypt the message
         HelloReplyMessage helloReplyMessage = (HelloReplyMessage) TransportFactory.receiveMessage(is);
         byte[] iv = null;
         try {
             assert helloReplyMessage != null;
+            // Decrypt content, get the IV
             iv = helloReplyMessage.decrypt(serverCert.getPublicKey()).getIV();
         } catch (ClassNotFoundException e) {
             System.err.println("The bank sent an invalid object.");
             System.exit(255); // ? n sei se o codigo é este... TBD
         }
 
+        // Step 3: Send the message to the bank, encrypting it with the symmetric key and the iv
         EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);
         TransportFactory.sendMessage(encryptedMessage, s);
 
+        // Step 4: Receive response from the bank. The response will be encrypted with the symmetric key and the iv
         EncryptedMessage responseEncryptedMessage = null;
         try {
             responseEncryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
             assert responseEncryptedMessage != null;
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
-            System.out.println(responseMsg);
 
             if(!responseEncryptedMessage.verifyChecksum(responseMsg, symmKey, iv)) {
                 System.err.println("Message checksum is not valid");

@@ -62,6 +62,9 @@ public class EncryptedMessage extends Message implements Serializable {
         return Arrays.equals(this.checksum, CipherUtils.hash(checksum));
     }
 
+    /*
+        Derive a key from a given key and a salt using PBKDF2WithHmacSHA256
+     */
     private Key deriveKey(Key key, byte[] salt)  {
         SecretKeyFactory factory = null;
 

@@ -208,7 +208,7 @@ public class MainATM {
             iv = helloReplyMessage.decrypt(serverCert.getPublicKey()).getIV();
         } catch (ClassNotFoundException e) {
             System.err.println("The bank sent an invalid object.");
-            System.exit(255); // ? n sei se o codigo é este... TBD
+            System.exit(63);
         }
 
         // Step 3: Send the message to the bank, encrypting it with the symmetric key and the iv
@@ -224,14 +224,14 @@ public class MainATM {
 
             if(!responseEncryptedMessage.verifyChecksum(responseMsg, symmKey, iv)) {
                 System.err.println("Message checksum is not valid");
-                System.exit(255);
+                System.exit(63);
             }
 
             return responseMsg.getResponse();
 
         } catch (ClassNotFoundException e) {
             System.err.println("The bank sent an invalid object.");
-            System.exit(255); // ? n sei se o codigo é este... TBD
+            System.exit(63);
         }
 
         return "";

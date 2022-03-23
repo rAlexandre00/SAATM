@@ -1,3 +1,5 @@
+package utils;
+
 import messages.EncryptedMessage;
 import messages.Message;
 
@@ -14,19 +16,7 @@ import java.security.cert.Certificate;
 
 public class TransportFactory {
 
-     static <V extends Message> void sendMessage(V msg, String ip, int port)  {
-         Socket s = null;
-         try {
-             s = new Socket(ip, port);
-             ObjectOutputStream objOut = new ObjectOutputStream(s.getOutputStream());
-             objOut.writeObject(msg);
-         } catch (IOException e) {
-             e.printStackTrace();
-         }
-
-    }
-
-    static <V extends Message> void sendMessage(V msg, Socket socket)  {
+    public static <V extends Message> void sendMessage(V msg, Socket socket)  {
         try {
             ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
             objOut.writeObject(msg);
@@ -35,7 +25,7 @@ public class TransportFactory {
         }
     }
 
-    static <V extends Message> void sendMessage(V msg, OutputStream os)  {
+    public static <V extends Message> void sendMessage(V msg, OutputStream os)  {
         try {
             ObjectOutputStream objOut = new ObjectOutputStream(os);
             objOut.writeObject(msg);
@@ -44,7 +34,7 @@ public class TransportFactory {
         }
     }
 
-    static Message receiveMessage(InputStream is) {
+    public static Message receiveMessage(InputStream is) {
         try {
             ObjectInputStream objInput = new ObjectInputStream(is);
             return (Message) objInput.readObject();
@@ -54,18 +44,32 @@ public class TransportFactory {
         return null;
     }
 
-
-    /*
-    static <V extends Message> void sendMessage(V msg, Socket socket, Key pubKey)  {
+    static void sendData(byte[] data, OutputStream os) {
+        DataOutputStream dOut = new DataOutputStream(os);
         try {
-            EncryptedMessage encMsg = new EncryptedMessage(msg, pubKey);
-            ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
-            objOut.writeObject(encMsg);
-        } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | ClassNotFoundException e) {
+            dOut.writeInt(data.length); // write length of the message
+            dOut.write(data);           // write the message
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static byte[] receiveData(InputStream is) {
+        DataInputStream dIn = new DataInputStream(is);
+
+        try {
+            int length = dIn.readInt();
+            if(length>0) {
+                byte[] message = new byte[length];
+                dIn.readFully(message, 0, message.length); // read the message
+                return message;
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
+        return new byte[]{};
+
     }
-     */
 
 }

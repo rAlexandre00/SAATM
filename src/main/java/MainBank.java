@@ -11,6 +11,8 @@ import sun.security.x509.X509CertImpl;
 import handlers.Handler;
 import messages.*;
 import utils.CipherUtils;
+import utils.DHKeyAgreement;
+import utils.TransportFactory;
 
 import java.net.*;
 import java.io.*;
@@ -121,6 +123,12 @@ public class MainBank {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
 
+                DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
+                dhKeyAgreement.DHExchangeBank();
+
+
+                /*
+
                 // Step 1: Receive Hello Message from an ATM, which contains the symmetric key
                 HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
                 try {
@@ -159,7 +167,11 @@ public class MainBank {
                 TransportFactory.sendMessage(encryptedResponse, os);
                 System.out.println(response);
 
+                 */
+
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 

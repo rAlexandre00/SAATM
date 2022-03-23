@@ -4,17 +4,17 @@ import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import utils.CipherUtils;
+import utils.DHKeyAgreement;
+import utils.TransportFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import java.net.*;
 import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -192,6 +192,15 @@ public class MainATM {
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
+        DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
+        try {
+            dhKeyAgreement.DHExchangeATM();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        /*
+
         // Generate symmetric key to be used in the communication
         Key symmKey = CipherUtils.generateSymmetricKey();
 
@@ -233,6 +242,8 @@ public class MainATM {
             System.err.println("The bank sent an invalid object.");
             System.exit(63);
         }
+
+         */
 
         return "";
 

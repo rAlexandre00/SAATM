@@ -29,7 +29,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package utils;
+import messages.DHIVMessage;
 import messages.DHMessage;
+
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,7 +52,7 @@ public class DHKeyAgreement {
         this.os = os;
     }
 
-    public SecretKeySpec DHExchangeATM() throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
+    public KeyAndIV DHExchangeATM() throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
         /*
          * ATM creates her own DH key pair with 2048-bit key size
          */
@@ -75,9 +77,10 @@ public class DHKeyAgreement {
          * Before she can do so, she has to instantiate a DH public key
          * from Bob's encoded key material.
          */
-        DHMessage bankPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
+        DHIVMessage bankPubKeyMessage = (DHIVMessage) TransportFactory.receiveMessage(is);
         assert bankPubKeyMessage != null;
         byte[] bankPubKeyEnc = bankPubKeyMessage.getKey();
+        IvParameterSpec iv = bankPubKeyMessage.getIV();
         KeyFactory atmKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankPubKeyEnc);
         PublicKey bankPubKey = atmKeyFac.generatePublic(x509KeySpec);
@@ -112,11 +115,11 @@ public class DHKeyAgreement {
          */
         SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 32, "AES");
         System.out.println(Arrays.toString(atmAesKey.getEncoded()));
-        return atmAesKey;
+        return new KeyAndIV(atmAesKey, iv);
 
     }
 
-    public SecretKeySpec DHExchangeBank() throws Exception {
+    public SecretKeySpec DHExchangeBank(byte[] iv) throws Exception {
 
         DHMessage atmPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
         assert atmPubKeyMessage != null;
@@ -148,7 +151,7 @@ public class DHKeyAgreement {
 
         // Bank encodes his public key, and sends it over to ATM.
         byte[] bankPubKeyEnc = bankKpair.getPublic().getEncoded();
-        DHMessage bankPubKeyMessage = new DHMessage(bankPubKeyEnc);
+        DHIVMessage bankPubKeyMessage = new DHIVMessage(bankPubKeyEnc, iv);
         TransportFactory.sendMessage(bankPubKeyMessage, os);
 
         /*

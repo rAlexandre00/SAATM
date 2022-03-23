@@ -3,9 +3,10 @@ import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import utils.CipherUtils;
 import utils.DHKeyAgreement;
+import utils.KeyAndIV;
 import utils.TransportFactory;
+import utils.Validator;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -194,12 +195,15 @@ public class MainATM {
         OutputStream os = s.getOutputStream();
 
         DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
-        Key symmKey = dhKeyAgreement.DHExchangeATM();
+        KeyAndIV exchangeResult = dhKeyAgreement.DHExchangeATM();
+        Key symmKey = exchangeResult.getKey();
+        byte[] iv = exchangeResult.getIV().getIV();
 
         // Step 1: Send HelloMessage to Bank with symmetric key encrypted with bank's public key
-        HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
-        TransportFactory.sendMessage(helloMsg, os);
+        //HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
+        //TransportFactory.sendMessage(helloMsg, os);
 
+        /*
         // Step 2: Receive HelloReplyMessage with contains the iv that will be used to encrypt the message
         HelloReplyMessage helloReplyMessage = (HelloReplyMessage) TransportFactory.receiveMessage(is);
         byte[] iv = null;
@@ -211,6 +215,7 @@ public class MainATM {
             System.err.println("The bank sent an invalid object.");
             System.exit(63);
         }
+         */
 
         // Step 3: Send the message to the bank, encrypting it with the symmetric key and the iv
         EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);

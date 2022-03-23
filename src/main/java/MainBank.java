@@ -13,6 +13,7 @@ import messages.*;
 import utils.CipherUtils;
 import utils.DHKeyAgreement;
 import utils.TransportFactory;
+import utils.Validator;
 
 import java.net.*;
 import java.io.*;
@@ -124,7 +125,8 @@ public class MainBank {
                 OutputStream os = s.getOutputStream();
 
                 DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
-                this.symmetricKey = dhKeyAgreement.DHExchangeBank();
+                byte[] iv = CipherUtils.getRandomNonce(16);
+                this.symmetricKey = dhKeyAgreement.DHExchangeBank(iv);
 
                 /*
                 // Step 1: Receive Hello Message from an ATM, which contains the symmetric key
@@ -138,8 +140,7 @@ public class MainBank {
                 */
 
                 // Step 2: Send the randomly generated IV to the ATM.
-                byte[] iv = CipherUtils.getRandomNonce(16);
-                TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
+                //TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
 
                 // Step 3: Receive the message from the ATM, decrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);

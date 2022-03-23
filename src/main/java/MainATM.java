@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -181,28 +182,19 @@ public class MainATM {
             e.printStackTrace();
         } catch (BadPaddingException e) {
             e.printStackTrace();
-        } catch (InvalidKeyException e) {
+        } catch (InvalidKeyException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
 
     }
 
-    private static <V extends Message> String communicateWithBank(V msg, Socket s) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException, ClassNotFoundException {
+    private static <V extends Message> String communicateWithBank(V msg, Socket s) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException, ClassNotFoundException, InvalidKeySpecException {
 
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
         DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
-        try {
-            dhKeyAgreement.DHExchangeATM();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        /*
-
-        // Generate symmetric key to be used in the communication
-        Key symmKey = CipherUtils.generateSymmetricKey();
+        Key symmKey = dhKeyAgreement.DHExchangeATM();
 
         // Step 1: Send HelloMessage to Bank with symmetric key encrypted with bank's public key
         HelloMessage helloMsg = new HelloMessage(symmKey, serverCert.getPublicKey());
@@ -242,8 +234,6 @@ public class MainATM {
             System.err.println("The bank sent an invalid object.");
             System.exit(63);
         }
-
-         */
 
         return "";
 

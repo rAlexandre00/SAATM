@@ -50,7 +50,7 @@ public class DHKeyAgreement {
         this.os = os;
     }
 
-    public SecretKeySpec DHExchangeATM() throws Exception {
+    public SecretKeySpec DHExchangeATM() throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
         /*
          * ATM creates her own DH key pair with 2048-bit key size
          */
@@ -110,7 +110,7 @@ public class DHKeyAgreement {
          * the (reinstantiated) AlgorithmParameters object must be explicitly
          * passed to the Cipher.init() method.
          */
-        SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 16, "AES");
+        SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 32, "AES");
         System.out.println(Arrays.toString(atmAesKey.getEncoded()));
         return atmAesKey;
 
@@ -185,7 +185,7 @@ public class DHKeyAgreement {
          * the (reinstantiated) AlgorithmParameters object must be explicitly
          * passed to the Cipher.init() method.
          */
-        SecretKeySpec bankAesKey = new SecretKeySpec(bankSharedSecret, 0, 16, "AES");
+        SecretKeySpec bankAesKey = new SecretKeySpec(bankSharedSecret, 0, 32, "AES");
         System.out.println(Arrays.toString(bankAesKey.getEncoded()));
         return bankAesKey;
     }

@@ -52,7 +52,7 @@ public class DHKeyAgreement {
         this.os = os;
     }
 
-    public KeyAndIV DHExchangeATM(Key pubKeyBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
+    public KeyAndIV DHExchangeATM(Key pubKeyBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 
         KeyPairGenerator kPairGen = KeyPairGenerator.getInstance("DH");
         kPairGen.initialize(2048);
@@ -63,12 +63,18 @@ public class DHKeyAgreement {
 
         byte[] pubKeyEnc = kPair.getPublic().getEncoded();
 
-        DHMessage atmPubKeyMessage = new DHMessage(pubKeyBank, pubKeyEnc);
+        DHMessage atmPubKeyMessage = new DHMessage(pubKeyEnc);
         TransportFactory.sendMessage(atmPubKeyMessage, os);
 
         DHIVMessage bankPubKeyMessage = (DHIVMessage) TransportFactory.receiveMessage(is);
+
         assert bankPubKeyMessage != null;
-        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey(pubKeyBank);
+        if(!bankPubKeyMessage.verifyChecksum(pubKeyBank)) {
+            System.err.println("DHParameters checksum is not valid");
+            System.exit(63);
+        }
+
+        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey();
         IvParameterSpec iv = bankPubKeyMessage.getIV();
         KeyFactory atmKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankPubKeyEnc);
@@ -87,7 +93,7 @@ public class DHKeyAgreement {
 
         DHMessage atmPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
         assert atmPubKeyMessage != null;
-        byte[] atmPubKeyEnc = atmPubKeyMessage.getKey(privKey);
+        byte[] atmPubKeyEnc = atmPubKeyMessage.getDHParams();
 
         KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(atmPubKeyEnc);

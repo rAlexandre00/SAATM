@@ -52,92 +52,48 @@ public class DHKeyAgreement {
         this.os = os;
     }
 
-    public KeyAndIV DHExchangeATM() throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
-        /*
-         * ATM creates her own DH key pair with 2048-bit key size
-         */
+    public KeyAndIV DHExchangeATM(Key pubKeyBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
+
         KeyPairGenerator kPairGen = KeyPairGenerator.getInstance("DH");
         kPairGen.initialize(2048);
         KeyPair kPair = kPairGen.generateKeyPair();
 
-        // ATM creates and initializes her DH KeyAgreement object
         KeyAgreement atmKeyAgree = KeyAgreement.getInstance("DH");
         atmKeyAgree.init(kPair.getPrivate());
 
-        // ATM encodes her public key, and sends it over to BANK.
         byte[] pubKeyEnc = kPair.getPublic().getEncoded();
 
-        DHMessage atmPubKeyMessage = new DHMessage(pubKeyEnc);
+        DHMessage atmPubKeyMessage = new DHMessage(pubKeyBank, pubKeyEnc);
         TransportFactory.sendMessage(atmPubKeyMessage, os);
 
-        /*
-         * ATM uses Bank's public key for the first (and only) phase
-         * of her version of the DH
-         * protocol.
-         * Before she can do so, she has to instantiate a DH public key
-         * from Bob's encoded key material.
-         */
         DHIVMessage bankPubKeyMessage = (DHIVMessage) TransportFactory.receiveMessage(is);
         assert bankPubKeyMessage != null;
-        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey();
+        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey(pubKeyBank);
         IvParameterSpec iv = bankPubKeyMessage.getIV();
         KeyFactory atmKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankPubKeyEnc);
         PublicKey bankPubKey = atmKeyFac.generatePublic(x509KeySpec);
         atmKeyAgree.doPhase(bankPubKey, true);
 
-        /*
-         * At this stage, both ATM and Bank have completed the DH key
-         * agreement protocol.
-         * Both generate the (same) shared secret.
-         */
         byte[] atmSharedSecret = atmKeyAgree.generateSecret();
 
-        /*
-         * Now let's create a SecretKey object using the shared secret
-         * and use it for encryption. First, we generate SecretKeys for the
-         * "AES" algorithm (based on the raw shared secret data) and
-         * Then we use AES in CBC mode, which requires an initialization
-         * vector (IV) parameter. Note that you have to use the same IV
-         * for encryption and decryption: If you use a different IV for
-         * decryption than you used for encryption, decryption will fail.
-         *
-         * If you do not specify an IV when you initialize the Cipher
-         * object for encryption, the underlying implementation will generate
-         * a random one, which you have to retrieve using the
-         * javax.crypto.Cipher.getParameters() method, which returns an
-         * instance of java.security.AlgorithmParameters. You need to transfer
-         * the contents of that object (e.g., in encoded format, obtained via
-         * the AlgorithmParameters.getEncoded() method) to the party who will
-         * do the decryption. When initializing the Cipher for decryption,
-         * the (reinstantiated) AlgorithmParameters object must be explicitly
-         * passed to the Cipher.init() method.
-         */
         SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 32, "AES");
         System.out.println(Arrays.toString(atmAesKey.getEncoded()));
         return new KeyAndIV(atmAesKey, iv);
 
     }
 
-    public SecretKeySpec DHExchangeBank(byte[] iv) throws Exception {
+    public SecretKeySpec DHExchangeBank(byte[] iv, Key privKey) throws Exception {
 
         DHMessage atmPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
         assert atmPubKeyMessage != null;
-        byte[] atmPubKeyEnc = atmPubKeyMessage.getKey();
-        /*
-         * Bank has received ATM's public key in encoded format.
-         * He instantiates a DH public key from the encoded key material.
-         */
+        byte[] atmPubKeyEnc = atmPubKeyMessage.getKey(privKey);
+
         KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(atmPubKeyEnc);
 
         PublicKey atmPubKey = bankKeyFac.generatePublic(x509KeySpec);
 
-        /*
-         * Bank gets the DH parameters associated with ATM's public key.
-         * He must use the same parameters when he generates his own key
-         * pair.
-         */
         DHParameterSpec dhParamFromAtmPubKey = ((DHPublicKey)atmPubKey).getParams();
 
         // Bank creates his own DH key pair
@@ -151,43 +107,13 @@ public class DHKeyAgreement {
 
         // Bank encodes his public key, and sends it over to ATM.
         byte[] bankPubKeyEnc = bankKpair.getPublic().getEncoded();
-        DHIVMessage bankPubKeyMessage = new DHIVMessage(bankPubKeyEnc, iv);
+        DHIVMessage bankPubKeyMessage = new DHIVMessage(bankPubKeyEnc, iv, privKey);
         TransportFactory.sendMessage(bankPubKeyMessage, os);
 
-        /*
-         * Bank uses ATM's public key for the first (and only) phase
-         * of his version of the DH
-         * protocol.
-         */
         bankKeyAgree.doPhase(atmPubKey, true);
 
-        /*
-         * At this stage, both ATM and Bank have completed the DH key
-         * agreement protocol.
-         * Both generate the (same) shared secret.
-         */
         byte[] bankSharedSecret = bankKeyAgree.generateSecret();
 
-        /*
-         * Now let's create a SecretKey object using the shared secret
-         * and use it for encryption. First, we generate SecretKeys for the
-         * "AES" algorithm (based on the raw shared secret data) and
-         * Then we use AES in CBC mode, which requires an initialization
-         * vector (IV) parameter. Note that you have to use the same IV
-         * for encryption and decryption: If you use a different IV for
-         * decryption than you used for encryption, decryption will fail.
-         *
-         * If you do not specify an IV when you initialize the Cipher
-         * object for encryption, the underlying implementation will generate
-         * a random one, which you have to retrieve using the
-         * javax.crypto.Cipher.getParameters() method, which returns an
-         * instance of java.security.AlgorithmParameters. You need to transfer
-         * the contents of that object (e.g., in encoded format, obtained via
-         * the AlgorithmParameters.getEncoded() method) to the party who will
-         * do the decryption. When initializing the Cipher for decryption,
-         * the (reinstantiated) AlgorithmParameters object must be explicitly
-         * passed to the Cipher.init() method.
-         */
         SecretKeySpec bankAesKey = new SecretKeySpec(bankSharedSecret, 0, 32, "AES");
         System.out.println(Arrays.toString(bankAesKey.getEncoded()));
         return bankAesKey;

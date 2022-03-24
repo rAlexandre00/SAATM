@@ -126,21 +126,7 @@ public class MainBank {
 
                 DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
                 byte[] iv = CipherUtils.getRandomNonce(16);
-                this.symmetricKey = dhKeyAgreement.DHExchangeBank(iv);
-
-                /*
-                // Step 1: Receive Hello Message from an ATM, which contains the symmetric key
-                HelloMessage helloMsg = (HelloMessage) TransportFactory.receiveMessage(is);
-                try {
-                    assert helloMsg != null;
-                    this.symmetricKey = helloMsg.decrypt(kp.getPrivate());
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-                */
-
-                // Step 2: Send the randomly generated IV to the ATM.
-                //TransportFactory.sendMessage(new HelloReplyMessage(kp.getPrivate(), iv), s);
+                this.symmetricKey = dhKeyAgreement.DHExchangeBank(iv, kp.getPrivate());
 
                 // Step 3: Receive the message from the ATM, decrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);

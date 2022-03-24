@@ -1,6 +1,9 @@
 package messages;
 
+import utils.CipherUtils;
+
 import java.io.Serializable;
+import java.security.Key;
 
 public class DHMessage extends Message implements Serializable  {
 
@@ -8,14 +11,13 @@ public class DHMessage extends Message implements Serializable  {
 
     private byte[] data;
 
-    public DHMessage(byte[] pubKey) {
+    public DHMessage(Key pubKey, byte[] dhParams) {
         super(MSG_CODE);
-        this.data = pubKey;
+        this.data = CipherUtils.encryptRSA(pubKey, dhParams);
     }
 
-    public byte[] getKey() {
-        // TODO
-        return data;
+    public byte[] getKey(Key privKey) {
+        return CipherUtils.decryptRSA(privKey, data);
     }
 
 

@@ -28,7 +28,7 @@ public class MainBank {
     private ServerSocket ss;
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
     private Bank bank = new Bank();
-    private KeyPair kp = null;
+    private KeyPair kp;
 
     public MainBank(String authFile) throws IOException {
         messageHandler(DepositMessage.MSG_CODE, this::depositMessage);
@@ -69,8 +69,7 @@ public class MainBank {
     private String withdrawMessage(WithdrawMessage msg)  {
 
         try {
-            String response = bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            return response;
+            return bank.withdraw(msg.getCardFile(), msg.getAccount(), msg.getAmount());
         } catch (AccountCardFileNotValidException | InsufficientAccountBalanceException e) {
             System.err.println("Error:" + e.getMessage());
             return ""; // Error message;
@@ -80,8 +79,7 @@ public class MainBank {
     private String newAccountMessage(NewAccountMessage msg) {
 
         try {
-            String response = bank.createAccount(msg.getAccount(), msg.getCardFile(), msg.getBalance());
-            return response;
+            return bank.createAccount(msg.getAccount(), msg.getCardFile(), msg.getBalance());
         } catch (AccountNameNotUniqueException e) {
             System.err.println("Error:" + e.getMessage());
             return ""; // Error message?
@@ -92,8 +90,7 @@ public class MainBank {
     private String getBalanceMessage(GetBalanceMessage msg) {
 
         try {
-            String response = bank.getBalance(msg.getCardFile(), msg.getAccount());
-            return response;
+            return bank.getBalance(msg.getCardFile(), msg.getAccount());
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
             return "";
@@ -103,8 +100,7 @@ public class MainBank {
     private String depositMessage(DepositMessage msg) {
 
         try {
-            String response = bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
-            return response;
+            return bank.deposit(msg.getCardFile(), msg.getAccount(), msg.getAmount());
         } catch (AccountCardFileNotValidException e) {
             System.err.println("Error:" + e.getMessage());
             return "";
@@ -162,28 +158,34 @@ public class MainBank {
                 System.out.println(response);
 
             } catch (IOException e) {
-                System.err.println("Error while doing some I/O operation: " + Arrays.toString(e.getStackTrace()));
+                System.err.println("Error while doing some I/O operation.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (InvalidAlgorithmParameterException e) {
                 System.err.println("Invalid algorithm parameters on DH.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (InvalidKeySpecException | InvalidKeyException e) {
                 System.err.println("The provided key in a encryption/decryption operation is invalid.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (ClassNotFoundException e) {
                 System.err.println("Class cast went wrong, the class from the message received is invalid.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (ChecksumInvalidException e) {
                 System.err.println("Invalid checksum.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch(Exception e) {
-                System.err.println("Generic Exception: " + Arrays.toString(e.getStackTrace()));
-                System.exit(255);
+                System.err.println("Generic Exception.");
+                System.err.println(Arrays.toString(e.getStackTrace()));
+                System.exit(255); // é para sair? acho q n...
             }
         }
     }

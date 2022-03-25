@@ -169,18 +169,23 @@ public class MainATM {
             System.exit(0);
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments: " + e.getMessage());
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         } catch (FileNotFoundException e) {
             System.err.println("Error writing to file: " + e.getMessage());
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         } catch (CertificateException e) {
-            System.err.println("Error processing certificate: " + e.getMessage());
+            System.err.println("Error processing certificate.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         } catch (IOException e) {
-            System.err.println("Error while doing some I/O operation: " + Arrays.toString(e.getStackTrace()));
+            System.err.println("Error while doing some I/O operation.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(63);
         } catch(Exception e) {
-            System.err.println("Generic Exception catch block! " + Arrays.toString(e.getStackTrace()));
+            System.err.println("Generic Exception.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         }
 

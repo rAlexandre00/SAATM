@@ -141,7 +141,7 @@ public class MainBank {
                 // Verify the checksum from the message
                 if(!encryptedMessage.verifyChecksum(m, symmetricKey, iv)) {
                     System.err.println("Message checksum is not valid");
-                    System.exit(255);
+                    System.exit(63);
                 }
 
                 // Handle the message
@@ -149,9 +149,15 @@ public class MainBank {
                 String response = handleMessage(m);
 
                 // Step 4: Send the response to the ATM, encrypting it with the symmetric key and the iv
+                /*
+                1) Gerir Concorrência
+                2) Bank should print "protocol_error\n" to stdout and roll back the current transaction
+                 */
                 EncryptedMessage encryptedResponse = new EncryptedMessage(new ResponseMessage(response), symmetricKey, iv);
                 TransportFactory.sendMessage(encryptedResponse, os);
                 System.out.println(response);
+
+
 
             } catch (IOException e) {
                 e.printStackTrace();

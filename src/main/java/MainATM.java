@@ -172,7 +172,7 @@ public class MainATM {
         } catch (HelpScreenException e) {
             System.exit(0);
         } catch (ArgumentParserException e) {
-            System.err.println("Error reading program arguments " + e.getMessage()); //Help request should be a valid request?
+            System.err.println("Error reading program arguments " + e.getMessage());
             System.exit(255);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();

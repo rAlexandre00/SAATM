@@ -39,7 +39,7 @@ public class Account implements Serializable {
      * @return the resulting balance
      */
     public double deposit(double amount) {
-        this.balance += amount;
+        this.balance = Math.round((this.balance + amount) * 100.0) / 100.0;
         return this.balance;
     }
 
@@ -54,8 +54,7 @@ public class Account implements Serializable {
             throw new InsufficientAccountBalanceException
                     ("Account " + name + " has insufficient balance for the requested withdraw");
         }
-
-        this.balance -= amount;
+        this.balance = Math.round((this.balance - amount) * 100.0) / 100.0;
         return this.balance;
     }
 

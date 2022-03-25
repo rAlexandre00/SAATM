@@ -53,10 +53,8 @@ public class MainATM {
     }
 
     private static void connectToServer(String ip, int port) throws IOException{
-        System.out.println("Attempting connection...\n");
         s = new Socket(ip, port);
         s.setSoTimeout(10000);
-        System.out.println("Connected to: " + s.getInetAddress());
     }
 
     public static void main(String[] args) {
@@ -96,8 +94,6 @@ public class MainATM {
             String authFileName = ns.getString("s");
             String accName = ns.getString("a");
 
-            startRunning(authFileName, ip, port);
-
             if (ns.getString("n") != null){
 
                 if (!Validator.validateCurrency(ns.getString("n"))) {
@@ -107,9 +103,8 @@ public class MainATM {
                 double iBalance = Double.parseDouble(ns.getString("n"));
 
                 SecureRandom random = new SecureRandom();
-                byte[] cardFileBytes = new byte[128];
-                random.nextBytes(cardFileBytes);
-                String cardFile = new String(cardFileBytes);
+                byte[] cardFile = new byte[128];
+                random.nextBytes(cardFile);
 
                 File cardFile_file = new File(ns.getString("c"));
 
@@ -117,17 +112,18 @@ public class MainATM {
                     System.exit(255);
                 }
 
-                FileWriter cardFile_writer = new FileWriter(cardFile_file);
+                FileOutputStream  cardFile_writer = new FileOutputStream (cardFile_file);
                 cardFile_writer.write(cardFile);
                 cardFile_writer.close();
 
                 NewAccountMessage msg = new NewAccountMessage(accName, iBalance, cardFile);
+                startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
                 operationDone = true;
             }
 
-            String cardFile = readCardFile(ns.getString("c"));
+            byte[] cardFile = readCardFile(ns.getString("c"));
 
             if (ns.getString("d") != null){
 
@@ -136,6 +132,7 @@ public class MainATM {
 
                 double amount = Double.parseDouble(ns.getString("d"));
                 DepositMessage msg = new DepositMessage(cardFile, accName, amount);
+                startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
                 operationDone = true;
@@ -148,6 +145,7 @@ public class MainATM {
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
                 WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
+                startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
                 operationDone = true;
@@ -158,6 +156,7 @@ public class MainATM {
                     System.exit(255);
 
                 GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
+                startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
                 operationDone = true;
@@ -171,23 +170,19 @@ public class MainATM {
             System.exit(0);
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
-            System.exit(255);
-        } catch (FileNotFoundException e) {
-            System.err.println("Error writing to file.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(255);
         } catch (CertificateException e) {
             System.err.println("Error processing certificate.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(255);
         } catch (IOException e) {
             System.err.println("Error while doing some I/O operation.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(63);
         } catch(Exception e) {
             System.err.println("Generic Exception.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(255);
         }
 
@@ -238,27 +233,28 @@ public class MainATM {
             System.exit(63);
         } catch (InvalidKeySpecException | InvalidKeyException e) {
             System.err.println("The provided key in a encryption/decryption operation is invalid.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(63);
         } catch (ClassNotFoundException e) {
             System.err.println("Class cast went wrong, the class from the message received is invalid.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(63);
         } catch (ChecksumInvalidException e) {
             System.err.println("Invalid checksum.");
-            System.err.println(Arrays.toString(e.getStackTrace()));
+            e.printStackTrace(System.err);
             System.exit(63);
         }
 
         return "";
     }
 
-    private static String readCardFile(String cardFileName) throws FileNotFoundException {
-        // TODO verify format
-        Scanner scanner = new Scanner( new File(cardFileName) );
-        String text = scanner.nextLine();
-        scanner.close(); // Put this call in a finally block
-        return text;
+    private static byte[] readCardFile(String cardFileName) throws IOException {
+
+        FileInputStream fl = new FileInputStream(cardFileName);
+        byte[] arr = new byte[128];
+        fl.read(arr);
+        fl.close();
+        return arr;
     }
 
 }

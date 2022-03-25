@@ -10,9 +10,9 @@ public class NewAccountMessage extends Message implements Serializable {
 
     private final String account;
     private final double balance;
-    private final String cardFile;
+    private final byte[] cardFile;
 
-    public NewAccountMessage(String account, double balance, String cardFile) {
+    public NewAccountMessage(String account, double balance, byte[] cardFile) {
         super(MSG_CODE);
         this.account = account;
         this.balance = balance;
@@ -27,7 +27,7 @@ public class NewAccountMessage extends Message implements Serializable {
         return balance;
     }
 
-    public String getCardFile() {
+    public byte[] getCardFile() {
         return cardFile;
     }
 

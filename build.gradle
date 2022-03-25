@@ -53,11 +53,21 @@ task(runBank, dependsOn: 'classes', type: JavaExec) {
 }
 
 //create a single Jar with all dependencies
-task fatJar(type: Jar) {
+task fatJar_Bank(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'MainBank'
+    }
+    baseName = project.name + '-Bank-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+//create a single Jar with all dependencies
+task fatJar_ATM(type: Jar) {
     manifest {
         attributes 'Main-Class': 'MainATM'
     }
-    baseName = project.name + '-all'
+    baseName = project.name + '-ATM-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }

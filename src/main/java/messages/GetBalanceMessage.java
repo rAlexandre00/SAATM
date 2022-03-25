@@ -2,14 +2,15 @@ package messages;
 
 import java.io.Serializable;
 import java.security.Key;
+import java.util.Arrays;
 
 public class GetBalanceMessage extends Message implements Serializable {
     public final static short MSG_CODE = 4;
 
-    private final String cardFile;
+    private final byte[] cardFile;
     private final String account;
 
-    public GetBalanceMessage(String cardFile, String account) {
+    public GetBalanceMessage(byte[] cardFile, String account) {
         super(MSG_CODE);
         this.cardFile = cardFile;
         this.account = account;
@@ -18,12 +19,12 @@ public class GetBalanceMessage extends Message implements Serializable {
     @Override
     public String toString() {
         return "GetBalanceMessage{" +
-                "cardFile='" + cardFile + '\'' +
+                "cardFile='" + Arrays.toString(cardFile) + '\'' +
                 ", account='" + account + '\'' +
                 '}';
     }
 
-    public String getCardFile() {
+    public byte[] getCardFile() {
         return cardFile;
     }
 

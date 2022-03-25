@@ -28,14 +28,14 @@ public class Bank implements Serializable {
      * @return result of the operation in JSON format
      * @throws AccountNameNotUniqueException if there is already an account with the name indicated
      */
-    public synchronized String createAccount(String accountName, String cardFile, double initialBalance) throws AccountNameNotUniqueException {
+    public synchronized String createAccount(String accountName, byte[] cardFile, double initialBalance) throws AccountNameNotUniqueException {
         if(accounts.containsKey(accountName))
             throw new AccountNameNotUniqueException("Account name " + accountName + " already exists");
 
         byte[] cardHash;
         do {
             // Generate a hash of the card
-            cardHash = Hashing.sha256().hashString(cardFile, StandardCharsets.UTF_8).asBytes();
+            cardHash = Hashing.sha256().hashBytes(cardFile).asBytes();
         } while (accountsCards.contains(cardHash)); // Repeat while card is not unique
 
         // Create a new account
@@ -52,7 +52,7 @@ public class Bank implements Serializable {
      * @return result of the operation in JSON format
      * @throws AccountCardFileNotValidException if the cardFile is invalid for the given account
      */
-    public String deposit(String cardFile, String accountName, double amount) throws AccountCardFileNotValidException {
+    public String deposit(byte[] cardFile, String accountName, double amount) throws AccountCardFileNotValidException {
         if(!validateCardFile(cardFile, accountName))
             throw new AccountCardFileNotValidException("Invalid cardFile on deposit on account " + accountName);
 
@@ -71,7 +71,7 @@ public class Bank implements Serializable {
      * @throws AccountCardFileNotValidException if the cardFile is invalid for the given account
      * @throws InsufficientAccountBalanceException if there is not enough funds on the account
      */
-    public String withdraw(String cardFile, String accountName, double amount)
+    public String withdraw(byte[]  cardFile, String accountName, double amount)
             throws AccountCardFileNotValidException, InsufficientAccountBalanceException {
 
         if(!validateCardFile(cardFile, accountName))
@@ -90,7 +90,7 @@ public class Bank implements Serializable {
      * @return result of the operation in JSON format
      * @throws AccountCardFileNotValidException if the cardFile is invalid for the given account
      */
-    public String getBalance(String cardFile, String accountName) throws AccountCardFileNotValidException {
+    public String getBalance(byte[] cardFile, String accountName) throws AccountCardFileNotValidException {
 
         if(!validateCardFile(cardFile, accountName))
             throw new AccountCardFileNotValidException("Invalid cardFile on balance request on account " + accountName);
@@ -112,8 +112,8 @@ public class Bank implements Serializable {
      * @param accountName
      * @return if a given cardFile is valid for an account
      */
-    private boolean validateCardFile(String cardFile, String accountName) {
-        byte[] cardHash = Hashing.sha256().hashString(cardFile, StandardCharsets.UTF_8).asBytes();
+    private boolean validateCardFile(byte[] cardFile, String accountName) {
+        byte[] cardHash = Hashing.sha256().hashBytes(cardFile).asBytes();
         return Arrays.equals(accounts.get(accountName).getCardHash(), cardHash);
     }
 

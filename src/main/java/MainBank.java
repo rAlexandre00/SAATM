@@ -38,7 +38,6 @@ public class MainBank {
 
         kp = CipherUtils.generateKeyPair();
         X509CertImpl cert = null;
-        System.out.println("Generating Auth File...\n");
         try {
             cert = CipherUtils.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
         } catch (GeneralSecurityException | IOException e) {
@@ -46,7 +45,7 @@ public class MainBank {
         }
         try {
             CipherUtils.certificateToFile(cert, authFile);
-            System.out.println("Created!\n");
+            System.out.println("created");
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
         }
@@ -160,32 +159,32 @@ public class MainBank {
 
             } catch (IOException e) {
                 System.err.println("Error while doing some I/O operation.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (InvalidAlgorithmParameterException e) {
                 System.err.println("Invalid algorithm parameters on DH.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (InvalidKeySpecException | InvalidKeyException e) {
                 System.err.println("The provided key in a encryption/decryption operation is invalid.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (ClassNotFoundException e) {
                 System.err.println("Class cast went wrong, the class from the message received is invalid.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch (ChecksumInvalidException e) {
                 System.err.println("Invalid checksum.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
             } catch(Exception e) {
                 System.err.println("Generic Exception.");
-                System.err.println(Arrays.toString(e.getStackTrace()));
+                e.printStackTrace(System.err);
                 System.exit(255); // é para sair? acho q n...
             }
         }
@@ -225,11 +224,12 @@ public class MainBank {
             System.exit(0);
         } catch (ArgumentParserException e) {
             System.err.println("Error reading program arguments");
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             System.exit(255);
         }
         String port = ns.getString("p");
         String authFile = ns.getString("s");
+
 
         // Validate port
         if(!Validator.validatePort(port))
@@ -237,8 +237,9 @@ public class MainBank {
 
         // Validate authFile
         File tempFile = new File(authFile);
-        if(tempFile.exists())
+        if(tempFile.exists()) {
             System.exit(255);
+        }
 
         MainBank mb = new MainBank(authFile);
         mb.startRunning();

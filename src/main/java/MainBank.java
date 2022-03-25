@@ -1,4 +1,5 @@
 import bank.Bank;
+import bank.DH;
 import bank.Parser;
 import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
@@ -10,10 +11,7 @@ import sun.security.x509.X509CertImpl;
 
 import handlers.Handler;
 import messages.*;
-import utils.CipherUtils;
-import utils.DHKeyAgreement;
-import utils.TransportFactory;
-import utils.Validator;
+import utils.*;
 
 import java.net.*;
 import java.io.*;
@@ -124,9 +122,19 @@ public class MainBank {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
 
-                DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
+                // Step 1: Receive DH parameters from ATM
+
+                DHMessage dhMessageFromATM = (DHMessage) TransportFactory.receiveMessage(is);
+
+                assert dhMessageFromATM != null;
+                DH dhBank = new DH(is, os, dhMessageFromATM);
                 byte[] iv = CipherUtils.getRandomNonce(16);
-                this.symmetricKey = dhKeyAgreement.DHExchangeBank(iv, kp.getPrivate());
+
+                this.symmetricKey = dhBank.generateSecret();
+
+                // Step 2: Send DH parameters to ATM
+                DHMessage bankPubKeyMessage = new DHMessage(dhBank.getDHParams(), kp.getPrivate(), iv);
+                TransportFactory.sendMessage(bankPubKeyMessage, os);
 
                 // Step 3: Receive the message from the ATM, decrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);

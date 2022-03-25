@@ -3,7 +3,7 @@ import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import utils.DHKeyAgreement;
+import atm.DH;
 import utils.KeyAndIV;
 import utils.TransportFactory;
 import utils.Validator;
@@ -21,7 +21,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
-import java.util.UUID;
+import java.security.SecureRandom;
 
 
 public class MainATM {
@@ -108,7 +108,10 @@ public class MainATM {
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
 
-                String cardFile = UUID.randomUUID().toString();
+                SecureRandom random = new SecureRandom();
+                byte[] cardFileBytes = new byte[128];
+                random.nextBytes(cardFileBytes);
+                String cardFile = new String(cardFileBytes);
 
                 File cardFile_file = new File(ns.getString("c"));
 
@@ -191,8 +194,24 @@ public class MainATM {
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
-        DHKeyAgreement dhKeyAgreement = new DHKeyAgreement(is, os);
-        KeyAndIV exchangeResult = dhKeyAgreement.DHExchangeATM(serverCert.getPublicKey());
+        DH dhATM = new DH(is, os);
+
+        // Step 1: Send the DH parameters to the bank
+
+        DHMessage dhMessageToBank = new DHMessage(dhATM.getPublicParameters(), serverCert.getPublicKey(), null);
+        TransportFactory.sendMessage(dhMessageToBank, os);
+
+        // Step 2: Receive the DH parameters from the bank, generate the key and get the iv
+
+        DHMessage dhMessageFromBank = (DHMessage) TransportFactory.receiveMessage(is);
+
+        assert dhMessageFromBank != null;
+        if(!dhMessageFromBank.verifyChecksum(serverCert.getPublicKey())) {
+            System.err.println("DHParameters checksum is not valid");
+            System.exit(63);
+        }
+
+        KeyAndIV exchangeResult = dhATM.getEncryptionParams(dhMessageFromBank);
         Key symmKey = exchangeResult.getKey();
         byte[] iv = exchangeResult.getIV().getIV();
 

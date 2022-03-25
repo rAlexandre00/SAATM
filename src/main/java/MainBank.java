@@ -139,7 +139,7 @@ public class MainBank {
                 }
 
                 // Verify the checksum from the message
-                if(!encryptedMessage.verifyChecksum(m, symmetricKey, iv)) {
+                if(!encryptedMessage.verifyChecksum(m)) {
                     System.err.println("Message checksum is not valid");
                     System.exit(63);
                 }

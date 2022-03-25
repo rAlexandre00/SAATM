@@ -29,7 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package utils;
-import messages.DHIVMessage;
 import messages.DHMessage;
 
 
@@ -52,7 +51,7 @@ public class DHKeyAgreement {
         this.os = os;
     }
 
-    public KeyAndIV DHExchangeATM(Key pubKeyBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
+    public KeyAndIV DHExchangeATM(Key pubKeyBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 
         KeyPairGenerator kPairGen = KeyPairGenerator.getInstance("DH");
         kPairGen.initialize(2048);
@@ -63,12 +62,18 @@ public class DHKeyAgreement {
 
         byte[] pubKeyEnc = kPair.getPublic().getEncoded();
 
-        DHMessage atmPubKeyMessage = new DHMessage(pubKeyBank, pubKeyEnc);
+        DHMessage atmPubKeyMessage = new DHMessage(pubKeyEnc, pubKeyBank, null);
         TransportFactory.sendMessage(atmPubKeyMessage, os);
 
-        DHIVMessage bankPubKeyMessage = (DHIVMessage) TransportFactory.receiveMessage(is);
+        DHMessage bankPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
+
         assert bankPubKeyMessage != null;
-        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey(pubKeyBank);
+        if(!bankPubKeyMessage.verifyChecksum(pubKeyBank)) {
+            System.err.println("DHParameters checksum is not valid");
+            System.exit(63);
+        }
+
+        byte[] bankPubKeyEnc = bankPubKeyMessage.getDHParams();
         IvParameterSpec iv = bankPubKeyMessage.getIV();
         KeyFactory atmKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankPubKeyEnc);
@@ -78,7 +83,6 @@ public class DHKeyAgreement {
         byte[] atmSharedSecret = atmKeyAgree.generateSecret();
 
         SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 32, "AES");
-        System.out.println(Arrays.toString(atmAesKey.getEncoded()));
         return new KeyAndIV(atmAesKey, iv);
 
     }
@@ -87,7 +91,7 @@ public class DHKeyAgreement {
 
         DHMessage atmPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
         assert atmPubKeyMessage != null;
-        byte[] atmPubKeyEnc = atmPubKeyMessage.getKey(privKey);
+        byte[] atmPubKeyEnc = atmPubKeyMessage.getDHParams();
 
         KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(atmPubKeyEnc);
@@ -107,7 +111,7 @@ public class DHKeyAgreement {
 
         // Bank encodes his public key, and sends it over to ATM.
         byte[] bankPubKeyEnc = bankKpair.getPublic().getEncoded();
-        DHIVMessage bankPubKeyMessage = new DHIVMessage(bankPubKeyEnc, iv, privKey);
+        DHMessage bankPubKeyMessage = new DHMessage(bankPubKeyEnc, privKey, iv);
         TransportFactory.sendMessage(bankPubKeyMessage, os);
 
         bankKeyAgree.doPhase(atmPubKey, true);
@@ -115,7 +119,6 @@ public class DHKeyAgreement {
         byte[] bankSharedSecret = bankKeyAgree.generateSecret();
 
         SecretKeySpec bankAesKey = new SecretKeySpec(bankSharedSecret, 0, 32, "AES");
-        System.out.println(Arrays.toString(bankAesKey.getEncoded()));
         return bankAesKey;
     }
 

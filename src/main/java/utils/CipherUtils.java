@@ -32,7 +32,6 @@ public class CipherUtils {
         return md.digest(data);
     }
 
-
     public static byte[] encryptRSA(Key key, byte[] data)  {
         try {
             Cipher cipher = null;

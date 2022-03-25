@@ -70,7 +70,6 @@ public class MainATM {
                 System.exit(255);
             }else{
                 ns = ap.parseArguments(args);
-                System.out.println(ns.getAttrs());
             }
 
             if (!Validator.validateIP(ns.getString("i"))){
@@ -104,10 +103,8 @@ public class MainATM {
             if (ns.getString("n") != null){
 
                 if (!Validator.validateCurrency(ns.getString("n"))) {
-                    System.out.println("fala dele");
                     System.exit(255);
                 }
-
 
                 double iBalance = Double.parseDouble(ns.getString("n"));
 
@@ -210,7 +207,7 @@ public class MainATM {
             assert responseEncryptedMessage != null;
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
 
-            if(!responseEncryptedMessage.verifyChecksum(responseMsg, symmKey, iv)) {
+            if(!responseEncryptedMessage.verifyChecksum(responseMsg)) {
                 System.err.println("Message checksum is not valid");
                 System.exit(63);
             }

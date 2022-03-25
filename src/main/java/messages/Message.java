@@ -2,7 +2,6 @@ package messages;
 
 
 import java.io.Serializable;
-import java.security.Key;
 
 public abstract class Message implements Serializable{
 

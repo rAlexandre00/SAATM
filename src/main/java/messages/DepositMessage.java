@@ -1,7 +1,6 @@
 package messages;
 
 import java.io.Serializable;
-import java.security.Key;
 import java.util.Arrays;
 
 public class DepositMessage extends Message implements Serializable {

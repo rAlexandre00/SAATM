@@ -1,5 +1,4 @@
 import atm.Parser;
-import bank.Bank;
 import exception.ChecksumInvalidException;
 import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
@@ -10,9 +9,6 @@ import utils.KeyAndIV;
 import utils.TransportFactory;
 import utils.Validator;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.net.*;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -22,8 +18,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
-import java.util.Scanner;
+
 import java.security.SecureRandom;
 
 

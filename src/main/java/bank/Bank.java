@@ -6,13 +6,12 @@ import exception.AccountNameNotUniqueException;
 import exception.InsufficientAccountBalanceException;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Bank implements Serializable {
 
-    public ConcurrentHashMap<String, Account> accounts = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<String, Account> accounts = new ConcurrentHashMap<>();
 
     // Auxiliary structure to verify uniqueness of cards
     private final Set<byte[]> accountsCards = ConcurrentHashMap.newKeySet();

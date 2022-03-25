@@ -1,6 +1,5 @@
 package utils;
 
-import messages.EncryptedMessage;
 import sun.security.x509.*;
 
 import javax.crypto.*;
@@ -9,7 +8,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.*;
 import java.math.BigInteger;

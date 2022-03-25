@@ -7,7 +7,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 
 public class Parser {
 
-    ArgumentParser ap = ArgumentParsers.newFor("Bank").build().defaultHelp(true);
+    final ArgumentParser ap = ArgumentParsers.newFor("Bank").build().defaultHelp(true);
 
     public Parser() {
         ap.addArgument("-p").setDefault("3000");

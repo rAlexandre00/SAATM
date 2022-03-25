@@ -44,8 +44,8 @@ import java.security.spec.X509EncodedKeySpec;
 
 public class DH {
 
-    private InputStream is;
-    private OutputStream os;
+    private final InputStream is;
+    private final OutputStream os;
     private byte[] publicParameters;
     private Key atmPubKey;
     private KeyAgreement keyAgreement;

@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class Account implements Serializable {
 
-    private String name;
+    private final String name;
     private double balance;
 
     public double setBalance(double balance) {
@@ -15,7 +15,7 @@ public class Account implements Serializable {
         return this.balance;
     }
 
-    private byte[] cardHash;
+    private final byte[] cardHash;
 
     public Account(String name, double initialBalance, byte[] cardHash) {
         this.name = name;
@@ -46,16 +46,14 @@ public class Account implements Serializable {
     /**
      * Removes amount to account balance
      * @param amount to be removed
-     * @return the resulting balance
      * @throws InsufficientAccountBalanceException if the resulting balance is less than 0
      */
-    public synchronized double withdraw(double amount) throws InsufficientAccountBalanceException {
+    public synchronized void withdraw(double amount) throws InsufficientAccountBalanceException {
         if(this.balance - amount < 0) {
             throw new InsufficientAccountBalanceException
                     ("Account " + name + " has insufficient balance for the requested withdraw");
         }
         this.balance = Math.round((this.balance - amount) * 100.0) / 100.0;
-        return this.balance;
     }
 
     /**

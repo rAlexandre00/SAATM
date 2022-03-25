@@ -18,7 +18,6 @@ import java.net.*;
 import java.io.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.cert.CertificateEncodingException;
@@ -28,7 +27,7 @@ public class MainBank {
     private ServerSocket ss;
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
     private Bank bank = new Bank();
-    private KeyPair kp;
+    private final KeyPair kp;
 
     public MainBank(String authFile) throws IOException {
         messageHandler(DepositMessage.MSG_CODE, this::depositMessage);
@@ -190,23 +189,11 @@ public class MainBank {
         }
     }
 
-    public void startRunning(){
-        try{
-            while (true) {
-                try{
-                    try {
-                        Socket atmSocket = ss.accept();
-                        ATMHandler ph = new ATMHandler(atmSocket);
-                        ph.start();
-                    }
-                    catch (SocketTimeoutException ignored) {
-                    }
-                }catch (EOFException e) {
-                    System.out.println("\nServer: Lost Connection. ");
-                }
-            }
-        }catch(IOException e){
-            e.printStackTrace();
+    public void startRunning() throws IOException {
+        while (true) {
+            Socket atmSocket = ss.accept();
+            ATMHandler ph = new ATMHandler(atmSocket);
+            ph.start();
         }
     }
 

@@ -1,9 +1,6 @@
 package messages;
 
-import java.io.File;
 import java.io.Serializable;
-import java.security.Key;
-import java.util.UUID;
 
 public class NewAccountMessage extends Message implements Serializable {
     public final static short MSG_CODE = 1;

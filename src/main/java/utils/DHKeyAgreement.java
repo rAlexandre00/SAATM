@@ -29,7 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package utils;
-import messages.DHIVMessage;
 import messages.DHMessage;
 
 
@@ -63,10 +62,10 @@ public class DHKeyAgreement {
 
         byte[] pubKeyEnc = kPair.getPublic().getEncoded();
 
-        DHMessage atmPubKeyMessage = new DHMessage(pubKeyEnc);
+        DHMessage atmPubKeyMessage = new DHMessage(pubKeyEnc, pubKeyBank, null);
         TransportFactory.sendMessage(atmPubKeyMessage, os);
 
-        DHIVMessage bankPubKeyMessage = (DHIVMessage) TransportFactory.receiveMessage(is);
+        DHMessage bankPubKeyMessage = (DHMessage) TransportFactory.receiveMessage(is);
 
         assert bankPubKeyMessage != null;
         if(!bankPubKeyMessage.verifyChecksum(pubKeyBank)) {
@@ -74,7 +73,7 @@ public class DHKeyAgreement {
             System.exit(63);
         }
 
-        byte[] bankPubKeyEnc = bankPubKeyMessage.getKey();
+        byte[] bankPubKeyEnc = bankPubKeyMessage.getDHParams();
         IvParameterSpec iv = bankPubKeyMessage.getIV();
         KeyFactory atmKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankPubKeyEnc);
@@ -113,7 +112,7 @@ public class DHKeyAgreement {
 
         // Bank encodes his public key, and sends it over to ATM.
         byte[] bankPubKeyEnc = bankKpair.getPublic().getEncoded();
-        DHIVMessage bankPubKeyMessage = new DHIVMessage(bankPubKeyEnc, iv, privKey);
+        DHMessage bankPubKeyMessage = new DHMessage(bankPubKeyEnc, privKey, iv);
         TransportFactory.sendMessage(bankPubKeyMessage, os);
 
         bankKeyAgree.doPhase(atmPubKey, true);

@@ -1,4 +1,6 @@
 import atm.Parser;
+import bank.Bank;
+import exception.ChecksumInvalidException;
 import messages.*;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -168,11 +170,11 @@ public class MainATM {
         } catch (HelpScreenException e) {
             System.exit(0);
         } catch (ArgumentParserException e) {
-            System.err.println("Error reading program arguments: " + e.getMessage());
+            System.err.println("Error reading program arguments.");
             System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         } catch (FileNotFoundException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
+            System.err.println("Error writing to file.");
             System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(255);
         } catch (CertificateException e) {
@@ -210,8 +212,7 @@ public class MainATM {
 
             assert dhMessageFromBank != null;
             if(!dhMessageFromBank.verifyChecksum(serverCert.getPublicKey())) {
-                System.err.println("DHParameters checksum is not valid");
-                System.exit(63);
+                throw new ChecksumInvalidException();
             }
 
             KeyAndIV exchangeResult = dhATM.getEncryptionParams(dhMessageFromBank);
@@ -229,18 +230,23 @@ public class MainATM {
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
 
             if(!responseEncryptedMessage.verifyChecksum(responseMsg)) {
-                System.err.println("Message checksum is not valid");
-                System.exit(63);
+                 throw new ChecksumInvalidException();
             }
 
             return responseMsg.getResponse();
         } catch (NoSuchAlgorithmException e) {
             System.exit(63);
-        } catch (InvalidKeySpecException e) {
-            System.exit(63);
-        } catch (InvalidKeyException e) {
+        } catch (InvalidKeySpecException | InvalidKeyException e) {
+            System.err.println("The provided key in a encryption/decryption operation is invalid.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(63);
         } catch (ClassNotFoundException e) {
+            System.err.println("Class cast went wrong, the class from the message received is invalid.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
+            System.exit(63);
+        } catch (ChecksumInvalidException e) {
+            System.err.println("Invalid checksum.");
+            System.err.println(Arrays.toString(e.getStackTrace()));
             System.exit(63);
         }
 

@@ -83,7 +83,6 @@ public class DHKeyAgreement {
         byte[] atmSharedSecret = atmKeyAgree.generateSecret();
 
         SecretKeySpec atmAesKey = new SecretKeySpec(atmSharedSecret, 0, 32, "AES");
-        System.out.println(Arrays.toString(atmAesKey.getEncoded()));
         return new KeyAndIV(atmAesKey, iv);
 
     }
@@ -120,7 +119,6 @@ public class DHKeyAgreement {
         byte[] bankSharedSecret = bankKeyAgree.generateSecret();
 
         SecretKeySpec bankAesKey = new SecretKeySpec(bankSharedSecret, 0, 32, "AES");
-        System.out.println(Arrays.toString(bankAesKey.getEncoded()));
         return bankAesKey;
     }
 

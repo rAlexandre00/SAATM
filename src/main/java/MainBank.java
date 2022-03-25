@@ -149,6 +149,7 @@ public class MainBank {
 
                 // Handle the message
                 assert m != null;
+
                 String response = handleMessage(m);
 
                 // Step 4: Send response to ATM

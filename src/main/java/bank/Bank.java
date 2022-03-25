@@ -8,13 +8,14 @@ import exception.InsufficientAccountBalanceException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Bank implements Serializable {
 
-    public HashMap<String, Account> accounts = new HashMap<>();
+    public ConcurrentHashMap<String, Account> accounts = new ConcurrentHashMap<>();
 
     // Auxiliary structure to verify uniqueness of cards
-    private Set<byte[]> accountsCards = new HashSet<>();
+    private final Set<byte[]> accountsCards = ConcurrentHashMap.newKeySet();
 
     /*
         Os retornos são strings para corresponder à String JSON indicada no enunciado...
@@ -27,7 +28,7 @@ public class Bank implements Serializable {
      * @return result of the operation in JSON format
      * @throws AccountNameNotUniqueException if there is already an account with the name indicated
      */
-    public String createAccount(String accountName, String cardFile, double initialBalance) throws AccountNameNotUniqueException {
+    public synchronized String createAccount(String accountName, String cardFile, double initialBalance) throws AccountNameNotUniqueException {
         if(accounts.containsKey(accountName))
             throw new AccountNameNotUniqueException("Account name " + accountName + " already exists");
 

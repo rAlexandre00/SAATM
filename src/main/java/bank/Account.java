@@ -49,11 +49,12 @@ public class Account implements Serializable {
      * @return the resulting balance
      * @throws InsufficientAccountBalanceException if the resulting balance is less than 0
      */
-    public double withdraw(double amount) throws InsufficientAccountBalanceException {
+    public synchronized double withdraw(double amount) throws InsufficientAccountBalanceException {
         if(this.balance - amount < 0) {
             throw new InsufficientAccountBalanceException
                     ("Account " + name + " has insufficient balance for the requested withdraw");
         }
+
         this.balance -= amount;
         return this.balance;
     }

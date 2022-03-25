@@ -2,12 +2,19 @@ package bank;
 
 import exception.InsufficientAccountBalanceException;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Account {
+public class Account implements Serializable {
 
     private String name;
     private double balance;
+
+    public double setBalance(double balance) {
+        this.balance = balance;
+        return this.balance;
+    }
+
     private byte[] cardHash;
 
     public Account(String name, double initialBalance, byte[] cardHash) {

@@ -5,12 +5,13 @@ import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
 import exception.InsufficientAccountBalanceException;
 
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class Bank {
+public class Bank implements Serializable {
 
-    private HashMap<String, Account> accounts = new HashMap<>();
+    public HashMap<String, Account> accounts = new HashMap<>();
 
     // Auxiliary structure to verify uniqueness of cards
     private Set<byte[]> accountsCards = new HashSet<>();
@@ -113,6 +114,32 @@ public class Bank {
     private boolean validateCardFile(String cardFile, String accountName) {
         byte[] cardHash = Hashing.sha256().hashString(cardFile, StandardCharsets.UTF_8).asBytes();
         return Arrays.equals(accounts.get(accountName).getCardHash(), cardHash);
+    }
+
+    public byte[] serialize() {
+        try {
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            ObjectOutputStream so = new ObjectOutputStream(bo);
+            so.writeObject(this);
+            so.flush();
+            return bo.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new byte[]{};
+    }
+
+    public static Bank deserialize(byte[] serializedBank) {
+
+        try {
+            ByteArrayInputStream bi = new ByteArrayInputStream(serializedBank);
+            ObjectInputStream si = new ObjectInputStream(bi);
+            return (Bank) si.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return new Bank();
     }
 
 }

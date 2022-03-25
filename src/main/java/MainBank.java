@@ -3,6 +3,7 @@ import bank.DH;
 import bank.Parser;
 import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
+import exception.ChecksumInvalidException;
 import exception.InsufficientAccountBalanceException;
 import net.sourceforge.argparse4j.helper.HelpScreenException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -16,6 +17,8 @@ import utils.*;
 import java.net.*;
 import java.io.*;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.cert.CertificateEncodingException;
@@ -111,13 +114,13 @@ public class MainBank {
     private class ATMHandler extends Thread {
 
         private final Socket s;
-        private Key symmetricKey;
 
         public ATMHandler(Socket socket) throws IOException {
             this.s = socket;
         }
 
         public void run() {
+            byte[] bankBackup = bank.serialize();
             try {
                 InputStream is = s.getInputStream();
                 OutputStream os = s.getOutputStream();
@@ -130,7 +133,7 @@ public class MainBank {
                 DH dhBank = new DH(is, os, dhMessageFromATM);
                 byte[] iv = CipherUtils.getRandomNonce(16);
 
-                this.symmetricKey = dhBank.generateSecret();
+                Key symmetricKey = dhBank.generateSecret();
 
                 // Step 2: Send DH parameters to ATM
                 DHMessage bankPubKeyMessage = new DHMessage(dhBank.getDHParams(), kp.getPrivate(), iv);
@@ -138,41 +141,50 @@ public class MainBank {
 
                 // Step 3: Receive the message from the ATM, decrypting it with the symmetric key and the iv
                 EncryptedMessage encryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
-                Message m = null;
-                try {
-                    assert encryptedMessage != null;
-                    m = encryptedMessage.decrypt(symmetricKey, iv);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
+
+                assert encryptedMessage != null;
+                Message m = encryptedMessage.decrypt(symmetricKey, iv);
+
 
                 // Verify the checksum from the message
                 if(!encryptedMessage.verifyChecksum(m)) {
-                    System.err.println("Message checksum is not valid");
-                    System.exit(63);
+                    throw new ChecksumInvalidException();
                 }
 
                 // Handle the message
                 assert m != null;
                 String response = handleMessage(m);
 
-                // Step 4: Send the response to the ATM, encrypting it with the symmetric key and the iv
-                /*
-                1) Gerir Concorrência
-                2) Bank should print "protocol_error\n" to stdout and roll back the current transaction
-                 */
+                // Step 4: Send response to ATM
+
                 EncryptedMessage encryptedResponse = new EncryptedMessage(new ResponseMessage(response), symmetricKey, iv);
                 TransportFactory.sendMessage(encryptedResponse, os);
                 System.out.println(response);
 
-
-
             } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Error while doing some I/O operation: " + Arrays.toString(e.getStackTrace()));
+                System.out.println("protocol_error");
+                bank = Bank.deserialize(bankBackup);
+            } catch (InvalidAlgorithmParameterException e) {
+                System.err.println("Invalid algorithm parameters on DH.");
+                System.out.println("protocol_error");
+                bank = Bank.deserialize(bankBackup);
+            } catch (InvalidKeySpecException | InvalidKeyException e) {
+                System.err.println("The provided key in a encryption/decryption operation is invalid.");
+                System.out.println("protocol_error");
+                bank = Bank.deserialize(bankBackup);
+            } catch (ClassNotFoundException e) {
+                System.err.println("Class cast went wrong, the class from the message received is invalid.");
+                System.out.println("protocol_error");
+                bank = Bank.deserialize(bankBackup);
+            } catch (ChecksumInvalidException e) {
+                System.err.println("Invalid checksum.");
+                System.out.println("protocol_error");
+                bank = Bank.deserialize(bankBackup);
+            } catch(Exception e) {
+                System.err.println("Generic Exception: " + Arrays.toString(e.getStackTrace()));
+                System.exit(255);
             }
-
         }
     }
 

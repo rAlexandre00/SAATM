@@ -36,4 +36,13 @@ public class DHMessage extends Message implements Serializable  {
         return Arrays.equals(checksum_calculated, checksum);
     }
 
+    @Override
+    public String toString() {
+        return "DHMessage{" +
+                "data=" + Arrays.toString(data) +
+                ", checksum=" + Arrays.toString(checksum) +
+                ", iv=" + Arrays.toString(iv) +
+                '}';
+    }
+
 }

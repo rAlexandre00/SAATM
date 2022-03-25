@@ -20,4 +20,12 @@ public class KeyAndIV {
     public IvParameterSpec getIV() {
         return this.iv;
     }
+
+    @Override
+    public String toString() {
+        return "KeyAndIV{" +
+                "key=" + key +
+                ", iv=" + iv +
+                '}';
+    }
 }

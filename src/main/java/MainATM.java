@@ -20,6 +20,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.security.SecureRandom;
 
@@ -35,15 +36,10 @@ public class MainATM {
 
     }
 
-    public static void startRunning(String authFileName, String ip, int port) {
-        try{
-            serverCert = loadAuthFile(authFileName);
-            connectToServer(ip, port);
-        }catch (EOFException e){
-            System.out.println("\nATM terminated connection");
-        }catch (IOException | CertificateException e) {
-            e.printStackTrace();
-        }
+    public static void startRunning(String authFileName, String ip, int port) throws CertificateException, IOException {
+        serverCert = loadAuthFile(authFileName);
+        connectToServer(ip, port);
+
     }
 
     private static Certificate loadAuthFile(String authFileName) throws CertificateException, IOException {
@@ -61,7 +57,7 @@ public class MainATM {
         System.out.println("Connected to: " + s.getInetAddress());
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Parser ap = new Parser();
         Namespace ns = null;
         boolean operationDone = false;
@@ -161,7 +157,7 @@ public class MainATM {
 
                 GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
                 String response = communicateWithBank(msg, s);
-                System.out.println(response); // print response
+                System.out.println(response);
                 operationDone = true;
             }
 
@@ -172,56 +168,57 @@ public class MainATM {
         } catch (HelpScreenException e) {
             System.exit(0);
         } catch (ArgumentParserException e) {
-            System.err.println("Error reading program arguments " + e.getMessage());
+            System.err.println("Error reading program arguments: " + e.getMessage());
             System.exit(255);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
             System.exit(255);
-        } catch (NoSuchPaddingException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException | InvalidKeySpecException e) {
-            e.printStackTrace();
+        } catch (CertificateException e) {
+            System.err.println("Error processing certificate: " + e.getMessage());
+            System.exit(255);
+        } catch (IOException e) {
+            System.err.println("Error while doing some I/O operation: " + Arrays.toString(e.getStackTrace()));
+            System.exit(63);
+        } catch(Exception e) {
+            System.err.println("Generic Exception catch block! " + Arrays.toString(e.getStackTrace()));
+            System.exit(255);
         }
 
     }
 
-    private static <V extends Message> String communicateWithBank(V msg, Socket s) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException, ClassNotFoundException, InvalidKeySpecException {
+    private static <V extends Message> String communicateWithBank(V msg, Socket s) throws IOException {
 
-        InputStream is = s.getInputStream();
-        OutputStream os = s.getOutputStream();
-
-        DH dhATM = new DH(is, os);
-
-        // Step 1: Send the DH parameters to the bank
-
-        DHMessage dhMessageToBank = new DHMessage(dhATM.getPublicParameters(), serverCert.getPublicKey(), null);
-        TransportFactory.sendMessage(dhMessageToBank, os);
-
-        // Step 2: Receive the DH parameters from the bank, generate the key and get the iv
-
-        DHMessage dhMessageFromBank = (DHMessage) TransportFactory.receiveMessage(is);
-
-        assert dhMessageFromBank != null;
-        if(!dhMessageFromBank.verifyChecksum(serverCert.getPublicKey())) {
-            System.err.println("DHParameters checksum is not valid");
-            System.exit(63);
-        }
-
-        KeyAndIV exchangeResult = dhATM.getEncryptionParams(dhMessageFromBank);
-        Key symmKey = exchangeResult.getKey();
-        byte[] iv = exchangeResult.getIV().getIV();
-
-        // Step 3: Send the message to the bank, encrypting it with the symmetric key and the iv
-        EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);
-        TransportFactory.sendMessage(encryptedMessage, s);
-
-        // Step 4: Receive response from the bank. The response will be encrypted with the symmetric key and the iv
-        EncryptedMessage responseEncryptedMessage = null;
         try {
+            InputStream is = s.getInputStream();
+            OutputStream os = s.getOutputStream();
+
+            DH dhATM = new DH(is, os);
+
+            // Step 1: Send the DH parameters to the bank
+
+            DHMessage dhMessageToBank = new DHMessage(dhATM.getPublicParameters(), serverCert.getPublicKey(), null);
+            TransportFactory.sendMessage(dhMessageToBank, os);
+
+            // Step 2: Receive the DH parameters from the bank, generate the key and get the iv
+
+            DHMessage dhMessageFromBank = (DHMessage) TransportFactory.receiveMessage(is);
+
+            assert dhMessageFromBank != null;
+            if(!dhMessageFromBank.verifyChecksum(serverCert.getPublicKey())) {
+                System.err.println("DHParameters checksum is not valid");
+                System.exit(63);
+            }
+
+            KeyAndIV exchangeResult = dhATM.getEncryptionParams(dhMessageFromBank);
+            Key symmKey = exchangeResult.getKey();
+            byte[] iv = exchangeResult.getIV().getIV();
+
+            // Step 3: Send the message to the bank, encrypting it with the symmetric key and the iv
+            EncryptedMessage encryptedMessage = new EncryptedMessage(msg, symmKey, iv);
+            TransportFactory.sendMessage(encryptedMessage, s);
+
+            // Step 4: Receive response from the bank. The response will be encrypted with the symmetric key and the iv
+            EncryptedMessage responseEncryptedMessage = null;
             responseEncryptedMessage = (EncryptedMessage) TransportFactory.receiveMessage(is);
             assert responseEncryptedMessage != null;
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
@@ -232,14 +229,17 @@ public class MainATM {
             }
 
             return responseMsg.getResponse();
-
+        } catch (NoSuchAlgorithmException e) {
+            System.exit(63);
+        } catch (InvalidKeySpecException e) {
+            System.exit(63);
+        } catch (InvalidKeyException e) {
+            System.exit(63);
         } catch (ClassNotFoundException e) {
-            System.err.println("The bank sent an invalid object.");
             System.exit(63);
         }
 
         return "";
-
     }
 
     private static String readCardFile(String cardFileName) throws FileNotFoundException {

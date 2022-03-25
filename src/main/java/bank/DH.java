@@ -50,31 +50,26 @@ public class DH {
     private Key atmPubKey;
     private KeyAgreement keyAgreement;
 
-    public DH(InputStream is, OutputStream os, DHMessage dhMessageFromATM) throws InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException {
+    public DH(InputStream is, OutputStream os, DHMessage dhMessageFromATM) throws InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchAlgorithmException {
         this.is = is;
         this.os = os;
 
         byte[] dhATMParameters = dhMessageFromATM.getDHParams();
 
-        try {
+        keyAgreement = KeyAgreement.getInstance("DH");
+        KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
+        KeyPairGenerator bankKpairGen = KeyPairGenerator.getInstance("DH");
 
-            keyAgreement = KeyAgreement.getInstance("DH");
-            KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
-            KeyPairGenerator bankKpairGen = KeyPairGenerator.getInstance("DH");
+        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(dhATMParameters);
 
-            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(dhATMParameters);
+        this.atmPubKey = bankKeyFac.generatePublic(x509KeySpec);
+        DHParameterSpec dhParamFromAtm = ((DHPublicKey)atmPubKey).getParams();
+        bankKpairGen.initialize(dhParamFromAtm);
+        KeyPair bankKpair = bankKpairGen.generateKeyPair();
 
-            this.atmPubKey = bankKeyFac.generatePublic(x509KeySpec);
-            DHParameterSpec dhParamFromAtm = ((DHPublicKey)atmPubKey).getParams();
-            bankKpairGen.initialize(dhParamFromAtm);
-            KeyPair bankKpair = bankKpairGen.generateKeyPair();
+        keyAgreement.init(bankKpair.getPrivate());
+        this.publicParameters = bankKpair.getPublic().getEncoded();
 
-            keyAgreement.init(bankKpair.getPrivate());
-            this.publicParameters = bankKpair.getPublic().getEncoded();
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
 
     }
 

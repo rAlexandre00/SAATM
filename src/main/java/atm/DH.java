@@ -35,8 +35,10 @@ import utils.KeyAndIV;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -45,7 +47,7 @@ public class DH {
     private final InputStream is;
     private final OutputStream os;
     private byte[] publicParameters;
-    private KeyAgreement keyAgreement;
+    private KeyPair kPair;
 
     public DH(InputStream is, OutputStream os) throws InvalidKeyException {
         this.is = is;
@@ -54,9 +56,7 @@ public class DH {
         try {
             KeyPairGenerator kPairGen = KeyPairGenerator.getInstance("DH");
             kPairGen.initialize(2048);
-            KeyPair kPair = kPairGen.generateKeyPair();
-            keyAgreement = KeyAgreement.getInstance("DH");
-            keyAgreement.init(kPair.getPrivate());
+            kPair = kPairGen.generateKeyPair();
             publicParameters = kPair.getPublic().getEncoded();
 
         } catch (NoSuchAlgorithmException e) {
@@ -70,6 +70,9 @@ public class DH {
     }
 
     public KeyAndIV getEncryptionParams(DHMessage dhMessageFromBank) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
+
+        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+        keyAgreement.init(kPair.getPrivate());
 
         byte[] bankPubKeyEnc = dhMessageFromBank.getDHParams();
         IvParameterSpec iv = dhMessageFromBank.getIV();

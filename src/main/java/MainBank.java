@@ -1,5 +1,6 @@
 import bank.Bank;
 import bank.DH;
+import bank.DHKeyPair;
 import bank.Parser;
 import exception.AccountCardFileNotValidException;
 import exception.AccountNameNotUniqueException;
@@ -10,7 +11,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import sun.security.x509.X509CertImpl;
 
-import handlers.Handler;
+import utils.Handler;
 import messages.*;
 import utils.*;
 
@@ -50,7 +51,7 @@ public class MainBank {
         }
 
         ss = new ServerSocket(3000);
-        ss.setSoTimeout(10000);
+        //ss.setSoTimeout(10000);
     }
 
 
@@ -124,10 +125,10 @@ public class MainBank {
                 DHMessage dhMessageFromATM = (DHMessage) TransportFactory.receiveMessage(is);
 
                 assert dhMessageFromATM != null;
-                DH dhBank = new DH(is, os, dhMessageFromATM);
+                DH dhBank = new DH(is, os);
                 byte[] iv = CipherUtils.getRandomNonce(16);
 
-                Key symmetricKey = dhBank.generateSecret();
+                Key symmetricKey = dhBank.generateSecret(dhMessageFromATM);
 
                 // Step 2: Send DH parameters to ATM
                 DHMessage bankPubKeyMessage = new DHMessage(dhBank.getDHParams(), kp.getPrivate(), iv);
@@ -192,6 +193,7 @@ public class MainBank {
     public void startRunning() throws IOException {
         while (true) {
             Socket atmSocket = ss.accept();
+            atmSocket.setSoTimeout(10000);
             ATMHandler ph = new ATMHandler(atmSocket);
             ph.start();
         }
@@ -202,6 +204,8 @@ public class MainBank {
     }
 
     public static void main(String[] args) throws IOException {
+
+        DHKeyPair.getInstance(); // triggering java static loader
 
         Parser ap = new Parser();
         Namespace ns = null;

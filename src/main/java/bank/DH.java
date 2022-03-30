@@ -38,9 +38,11 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 public class DH {
 
@@ -48,36 +50,32 @@ public class DH {
     private final OutputStream os;
     private byte[] publicParameters;
     private Key atmPubKey;
-    private KeyAgreement keyAgreement;
+    private KeyPair kPair;
 
-    public DH(InputStream is, OutputStream os, DHMessage dhMessageFromATM) throws InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchAlgorithmException {
+
+    public DH(InputStream is, OutputStream os) throws InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchAlgorithmException {
         this.is = is;
         this.os = os;
 
-        byte[] dhATMParameters = dhMessageFromATM.getDHParams();
-
-        keyAgreement = KeyAgreement.getInstance("DH");
-        KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
-        KeyPairGenerator bankKpairGen = KeyPairGenerator.getInstance("DH");
-
-        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(dhATMParameters);
-
-        this.atmPubKey = bankKeyFac.generatePublic(x509KeySpec);
-        DHParameterSpec dhParamFromAtm = ((DHPublicKey)atmPubKey).getParams();
-        bankKpairGen.initialize(dhParamFromAtm);
-        KeyPair bankKpair = bankKpairGen.generateKeyPair();
-
-        keyAgreement.init(bankKpair.getPrivate());
-        this.publicParameters = bankKpair.getPublic().getEncoded();
-
-
+        kPair = DHKeyPair.getInstance().getKeyPair();
+        this.publicParameters = kPair.getPublic().getEncoded();
     }
 
     public byte[] getDHParams() {
         return publicParameters;
     }
 
-    public SecretKeySpec generateSecret() throws InvalidKeyException {
+    public SecretKeySpec generateSecret(DHMessage dhMessageFromATM) throws InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException {
+
+        KeyFactory bankKeyFac = KeyFactory.getInstance("DH");
+
+        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+        keyAgreement.init(kPair.getPrivate());
+
+        byte[] dhATMParameters = dhMessageFromATM.getDHParams();
+        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(dhATMParameters);
+        this.atmPubKey = bankKeyFac.generatePublic(x509KeySpec);
+
         keyAgreement.doPhase(atmPubKey, true);
         byte[] bankSharedSecret = keyAgreement.generateSecret();
         return new SecretKeySpec(bankSharedSecret, 0, 16, "AES");

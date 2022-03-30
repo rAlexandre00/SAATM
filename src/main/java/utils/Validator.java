@@ -9,9 +9,14 @@ public class Validator {
         return Pattern.matches("(0|[1-9][0-9]*)", number);
     }
 
-    //TODO:
     public static boolean validateArgs(String[] args) {
-        return args.length <= 4096;
+
+        int totalLength = 0;
+
+        for (String arg : args) {
+            totalLength += arg.length();
+        }
+        return totalLength <= 4096;
     }
 
     public static boolean validateFileNames(String filename) {

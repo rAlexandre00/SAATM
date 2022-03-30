@@ -21,16 +21,13 @@ public class DHKeyPair {
             while(true) {
                 try {
                     kPairGen = KeyPairGenerator.getInstance("DH");
+                    kPairGen.initialize(2048);
                     kPair = kPairGen.generateKeyPair();
-                    System.out.println("generated new keypair!");
                     Thread.sleep(5000);
-                } catch (InterruptedException | NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException | NoSuchAlgorithmException ignored) {}
             }
         }).start();
 
-        System.out.println("tao");
     }
 
     public KeyPair getKeyPair() {

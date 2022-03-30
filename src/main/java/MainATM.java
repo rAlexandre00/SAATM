@@ -189,7 +189,7 @@ public class MainATM {
             InputStream is = s.getInputStream();
             OutputStream os = s.getOutputStream();
 
-            DH dhATM = new DH(is, os);
+            DH dhATM = new DH();
 
             // Step 1: Send the DH parameters to the bank
 

@@ -110,7 +110,7 @@ public class MainBank {
 
         private final Socket s;
 
-        public ATMHandler(Socket socket) throws IOException {
+        public ATMHandler(Socket socket) {
             this.s = socket;
         }
 
@@ -125,7 +125,7 @@ public class MainBank {
                 DHMessage dhMessageFromATM = (DHMessage) TransportFactory.receiveMessage(is);
 
                 assert dhMessageFromATM != null;
-                DH dhBank = new DH(is, os);
+                DH dhBank = new DH();
                 byte[] iv = CipherUtils.getRandomNonce(16);
 
                 Key symmetricKey = dhBank.generateSecret(dhMessageFromATM);
@@ -162,11 +162,6 @@ public class MainBank {
                 e.printStackTrace(System.err);
                 System.out.println("protocol_error");
                 bank = Bank.deserialize(bankBackup);
-            } catch (InvalidAlgorithmParameterException e) {
-                System.err.println("Invalid algorithm parameters on DH.");
-                e.printStackTrace(System.err);
-                System.out.println("protocol_error");
-                bank = Bank.deserialize(bankBackup);
             } catch (InvalidKeySpecException | InvalidKeyException e) {
                 System.err.println("The provided key in a encryption/decryption operation is invalid.");
                 e.printStackTrace(System.err);
@@ -185,7 +180,6 @@ public class MainBank {
             } catch(Exception e) {
                 System.err.println("Generic Exception.");
                 e.printStackTrace(System.err);
-                System.exit(255); // é para sair? acho q n...
             }
         }
     }

@@ -162,4 +162,6 @@ gradle-app.setting
 *.auth
 *.card
 
+.idea
+
 # End of https://www.toptal.com/developers/gitignore/api/gradle,java,intellij

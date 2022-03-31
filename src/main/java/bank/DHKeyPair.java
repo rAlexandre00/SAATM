@@ -9,7 +9,7 @@ public class DHKeyPair {
     private KeyPair kPair;
     private KeyPairGenerator kPairGen;
 
-    private static DHKeyPair instance = new DHKeyPair();
+    private static final DHKeyPair instance = new DHKeyPair();
 
     public static DHKeyPair getInstance() {
         return instance;

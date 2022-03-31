@@ -1,19 +1,16 @@
 package utils;
 
+
 import sun.security.x509.*;
 
-import javax.crypto.*;
-import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.security.cert.*;
-import java.security.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.util.Base64;
+import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.util.Date;
 
 @SuppressWarnings("sunapi")
@@ -151,60 +148,4 @@ public class CipherUtils {
         return nonce;
     }
 
-    public static void sendEncryptedResponse(String response, OutputStream os, Key symmKey, byte[] iv) throws IOException {
-        byte[] encryptedResponse;
-        try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, symmKey, new GCMParameterSpec(128, iv));
-            encryptedResponse = cipher.doFinal(response.getBytes());
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-            return;
-        } catch (InvalidKeyException e) {
-            System.err.println("Invalid Key");
-            return;
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
-            System.err.println("Invalid encrypted message");
-            return;
-        }
-        os.write(encryptedResponse.length);
-        os.write(encryptedResponse);
-        os.close();
-    }
-
-    public static Key generateSymmetricKey() {
-        KeyGenerator keyGen = null;
-        try {
-            keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(128, SecureRandom.getInstanceStrong());
-            return keyGen.generateKey();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /*
-        Derive a key from a given key and a salt using PBKDF2WithHmacSHA256
-     */
-    public static Key deriveKey(Key key, byte[] salt)  {
-        SecretKeyFactory factory = null;
-
-        try {
-            factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-
-        String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
-        // OWASP recommended to use 310000 iterations for PBKDF2-HMAC-SHA256
-        KeySpec spec = new PBEKeySpec(keyString.toCharArray(), salt, 310000, 256);
-        SecretKey tmp = null;
-        try {
-            tmp = factory.generateSecret(spec);
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        }
-        return new SecretKeySpec(tmp.getEncoded(), "AES");
-    }
 }

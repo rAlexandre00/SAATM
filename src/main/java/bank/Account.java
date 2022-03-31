@@ -10,11 +10,6 @@ public class Account implements Serializable {
     private final String name;
     private double balance;
 
-    public double setBalance(double balance) {
-        this.balance = balance;
-        return this.balance;
-    }
-
     private final byte[] cardHash;
 
     public Account(String name, double initialBalance, byte[] cardHash) {
@@ -36,11 +31,9 @@ public class Account implements Serializable {
     /**
      * Adds amount to account balance
      * @param amount to be added
-     * @return the resulting balance
      */
-    public double deposit(double amount) {
+    public void deposit(double amount) {
         this.balance = Math.round((this.balance + amount) * 100.0) / 100.0;
-        return this.balance;
     }
 
     /**

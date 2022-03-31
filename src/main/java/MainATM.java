@@ -116,6 +116,10 @@ public class MainATM {
                 NewAccountMessage msg = new NewAccountMessage(accName, iBalance, cardFile);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
+                if(response.equals("")) {
+                    System.err.println("Error on operation validity");
+                    System.exit(255);
+                }
                 System.out.println(response);
                 System.exit(0);
             }
@@ -133,6 +137,10 @@ public class MainATM {
                 DepositMessage msg = new DepositMessage(cardFile, accName, amount);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
+                if(response.equals("")) {
+                    System.err.println("Error on operation validity");
+                    System.exit(255);
+                }
                 System.out.println(response);
                 System.exit(0);
             }
@@ -148,6 +156,10 @@ public class MainATM {
                 WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
+                if(response.equals("")) {
+                    System.err.println("Error on operation validity");
+                    System.exit(255);
+                }
                 System.out.println(response);
                 System.exit(0);
             }
@@ -156,6 +168,10 @@ public class MainATM {
                 GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
+                if(response.equals("")) {
+                    System.err.println("Error on operation validity");
+                    System.exit(255);
+                }
                 System.out.println(response);
                 System.exit(0);
             }

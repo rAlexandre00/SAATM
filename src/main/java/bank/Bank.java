@@ -52,10 +52,12 @@ public class Bank implements Serializable {
      * @throws AccountCardFileNotValidException if the cardFile is invalid for the given account
      */
     public String deposit(byte[] cardFile, String accountName, double amount) throws AccountCardFileNotValidException {
+        Account account = accounts.get(accountName);
+        if(account == null)
+            throw new AccountCardFileNotValidException("Invalid cardFile on balance request on account " + accountName);
         if(!validateCardFile(cardFile, accountName))
             throw new AccountCardFileNotValidException("Invalid cardFile on deposit on account " + accountName);
 
-        Account account = accounts.get(accountName);
         account.deposit(amount);
 
         return String.format("{\"account\":\"%s\",\"deposit\":%s}", accountName, amount);
@@ -72,11 +74,12 @@ public class Bank implements Serializable {
      */
     public String withdraw(byte[]  cardFile, String accountName, double amount)
             throws AccountCardFileNotValidException, InsufficientAccountBalanceException {
-
+        Account account = accounts.get(accountName);
+        if(account == null)
+            throw new AccountCardFileNotValidException("Invalid cardFile on balance request on account " + accountName);
         if(!validateCardFile(cardFile, accountName))
             throw new AccountCardFileNotValidException("Invalid cardFile on withdraw on account " + accountName);
 
-        Account account = accounts.get(accountName);
         account.withdraw(amount);
 
         return String.format("{\"account\":\"%s\",\"withdraw\":%s}", accountName, amount);
@@ -90,11 +93,12 @@ public class Bank implements Serializable {
      * @throws AccountCardFileNotValidException if the cardFile is invalid for the given account
      */
     public String getBalance(byte[] cardFile, String accountName) throws AccountCardFileNotValidException {
-
+        Account account = accounts.get(accountName);
+        if(account == null)
+            throw new AccountCardFileNotValidException("Invalid cardFile on balance request on account " + accountName);
         if(!validateCardFile(cardFile, accountName))
             throw new AccountCardFileNotValidException("Invalid cardFile on balance request on account " + accountName);
 
-        Account account = accounts.get(accountName);
         return String.format("{\"account\":\"%s\",\"balance\":%s}", accountName, account.getBalance());
     }
 

@@ -25,7 +25,7 @@ import java.security.cert.CertificateEncodingException;
 
 public class MainBank {
 
-    private ServerSocket ss;
+    private final ServerSocket ss;
     private final Map<Short, Handler<? extends Message>> handlers = new HashMap();
     private Bank bank = new Bank();
     private final KeyPair kp;
@@ -60,7 +60,7 @@ public class MainBank {
             Handler h = handlers.get(m.getId());
             return h.handle(m);
         } else {
-            System.out.println(m);
+            System.err.println(m);
         }
         return null;
     }

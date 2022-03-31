@@ -2,6 +2,7 @@ package messages;
 
 import utils.CipherUtils;
 
+import javax.crypto.Mac;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 import java.security.*;
@@ -11,9 +12,9 @@ public class EncryptedMessage extends Message implements Serializable {
     public final static short MSG_CODE = 5;
 
     private final byte[] msg;
-    private final byte[] checksum;
+    private final byte[] hmac;
 
-    public EncryptedMessage(Message msg, Key symmetricKey, byte[] iv) throws IOException {
+    public EncryptedMessage(Message msg, Key symmetricKey, byte[] iv) throws IOException, NoSuchAlgorithmException, InvalidKeyException {
         super(MSG_CODE);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -27,7 +28,9 @@ public class EncryptedMessage extends Message implements Serializable {
 
         byte[] checksum = new byte[data.length];
         System.arraycopy(data, 0, checksum, 0, data.length);
-        this.checksum = CipherUtils.hash(checksum);
+        Mac mac = Mac.getInstance("HmacSHA1");
+        mac.init(symmetricKey);
+        this.hmac = mac.doFinal(checksum);
     }
 
     public Message decrypt(Key key, byte[] iv) throws IOException, ClassNotFoundException {
@@ -38,15 +41,16 @@ public class EncryptedMessage extends Message implements Serializable {
         return (Message) is.readObject();
     }
 
-    public boolean verifyChecksum(Message m) throws IOException {
+    public boolean verifyChecksum(Message m, Key symmetricKey) throws IOException, NoSuchAlgorithmException, InvalidKeyException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
         oos.writeObject(m);
         oos.flush();
 
         byte[] messageEncoded = bos.toByteArray();
-        byte[] checksum = new byte[messageEncoded.length];
-        System.arraycopy(messageEncoded, 0, checksum, 0, messageEncoded.length);
-        return Arrays.equals(this.checksum, CipherUtils.hash(checksum));
+        Mac mac = Mac.getInstance("HmacSHA1");
+        mac.init(symmetricKey);
+        return Arrays.equals(this.hmac, mac.doFinal(messageEncoded));
+
     }
 }

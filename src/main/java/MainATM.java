@@ -55,9 +55,9 @@ public class MainATM {
     public static void main(String[] args) {
         Parser ap = new Parser();
         Namespace ns = null;
-        boolean operationDone = false;
         try {
             if (!Validator.validateArgs(args)){
+                System.err.println("Invalid arguments");
                 System.exit(255);
             }else{
                 ns = ap.parseArguments(args);
@@ -92,6 +92,7 @@ public class MainATM {
             if (ns.getString("n") != null){
 
                 if (!Validator.validateCurrency(ns.getString("n"))) {
+                    System.err.println("Invalid balance");
                     System.exit(255);
                 }
 
@@ -104,6 +105,7 @@ public class MainATM {
                 File cardFile_file = new File(ns.getString("c"));
 
                 if(cardFile_file.exists()) {
+                    System.err.println("Card file already exists");
                     System.exit(255);
                 }
 
@@ -115,51 +117,51 @@ public class MainATM {
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
-                operationDone = true;
+                System.exit(0);
             }
 
             byte[] cardFile = readCardFile(ns.getString("c"));
 
             if (ns.getString("d") != null){
 
-                if(operationDone || !Validator.validateCurrency(ns.getString("d")))
+                if(!Validator.validateCurrency(ns.getString("d"))) {
+                    System.err.println("Invalid amount");
                     System.exit(255);
+                }
 
                 double amount = Double.parseDouble(ns.getString("d"));
                 DepositMessage msg = new DepositMessage(cardFile, accName, amount);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
-                operationDone = true;
+                System.exit(0);
             }
 
             if (ns.getString("w") != null) {
 
-                if (operationDone || !Validator.validateCurrency(ns.getString("w")))
+                if (!Validator.validateCurrency(ns.getString("w"))) {
+                    System.err.println("Invalid amount");
                     System.exit(255);
+                }
 
                 double wAmount = Double.parseDouble(ns.getString("w"));
                 WithdrawMessage msg = new WithdrawMessage(cardFile, accName, wAmount);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
-                operationDone = true;
+                System.exit(0);
             }
 
             if (ns.getString("g") != null) {
-                if (operationDone)
-                    System.exit(255);
-
                 GetBalanceMessage msg = new GetBalanceMessage(cardFile, accName);
                 startRunning(authFileName, ip, port);
                 String response = communicateWithBank(msg, s);
                 System.out.println(response);
-                operationDone = true;
+                System.exit(0);
             }
 
-            if (!operationDone) {
-                System.exit(255);
-            }
+            System.err.println("Operation was not completed");
+            System.exit(255);
 
         } catch (HelpScreenException e) {
             System.exit(0);
@@ -219,7 +221,7 @@ public class MainATM {
             assert responseEncryptedMessage != null;
             ResponseMessage responseMsg = (ResponseMessage) responseEncryptedMessage.decrypt(symmKey, iv);
 
-            if(!responseEncryptedMessage.verifyChecksum(responseMsg)) {
+            if(!responseEncryptedMessage.verifyChecksum(responseMsg, symmKey)) {
                  throw new ChecksumInvalidException();
             }
 

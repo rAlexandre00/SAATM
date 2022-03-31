@@ -32,10 +32,10 @@ public class Bank implements Serializable {
             throw new AccountNameNotUniqueException("Account name " + accountName + " already exists");
 
         byte[] cardHash;
-        do {
-            // Generate a hash of the card
-            cardHash = Hashing.sha256().hashBytes(cardFile).asBytes();
-        } while (accountsCards.contains(cardHash)); // Repeat while card is not unique
+        // Generate a hash of the card
+        cardHash = Hashing.sha256().hashBytes(cardFile).asBytes();
+        if(accountsCards.contains(cardHash))
+            throw new AccountNameNotUniqueException("Account name " + accountName + " already exists");
 
         // Create a new account
         accounts.put(accountName, new Account(accountName, initialBalance, cardHash));

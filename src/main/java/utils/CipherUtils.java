@@ -23,7 +23,7 @@ public class CipherUtils {
         MessageDigest md = null;
 
         try {
-            md = MessageDigest.getInstance("MD5");
+            md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -135,7 +135,9 @@ public class CipherUtils {
 
     public static KeyPair generateKeyPair() {
         try {
-            return KeyPairGenerator.getInstance("RSA").generateKeyPair();
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            return kpg.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(255);

@@ -39,7 +39,7 @@ public class MainBank {
         kp = CipherUtils.generateKeyPair();
         X509CertImpl cert = null;
         try {
-            cert = CipherUtils.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA1withRSA");
+            cert = CipherUtils.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA256withRSA");
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
         }
@@ -142,7 +142,7 @@ public class MainBank {
 
 
                 // Verify the checksum from the message
-                if(!encryptedMessage.verifyChecksum(m)) {
+                if(!encryptedMessage.verifyChecksum(m, symmetricKey)) {
                     throw new ChecksumInvalidException();
                 }
 

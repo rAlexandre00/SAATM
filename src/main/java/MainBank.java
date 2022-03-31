@@ -41,13 +41,13 @@ public class MainBank {
         try {
             cert = CipherUtils.generateCertificate("CN=Bank, L=Lisbon, C=PT", kp, 365, "SHA256withRSA");
         } catch (GeneralSecurityException | IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
         }
         try {
             CipherUtils.certificateToFile(cert, authFile);
             System.out.println("created");
         } catch (CertificateEncodingException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
         }
 
         ss = new ServerSocket(3000);
@@ -223,6 +223,7 @@ public class MainBank {
         // Validate authFile
         File tempFile = new File(authFile);
         if(tempFile.exists()) {
+            System.err.println("Auth file already exists");
             System.exit(255);
         }
 

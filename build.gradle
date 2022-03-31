@@ -57,7 +57,7 @@ task fatJar_Bank(type: Jar) {
     manifest {
         attributes 'Main-Class': 'MainBank'
     }
-    baseName = project.name + '-Bank-all'
+    baseName = project.name + '-Bank'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
@@ -67,9 +67,14 @@ task fatJar_ATM(type: Jar) {
     manifest {
         attributes 'Main-Class': 'MainATM'
     }
-    baseName = project.name + '-ATM-all'
+    baseName = project.name + '-ATM'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+task fatJar {
+    dependsOn 'fatJar_Bank'
+    dependsOn 'fatJar_ATM'
 }
 
 // Define the main class for the application

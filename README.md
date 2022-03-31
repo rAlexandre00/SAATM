@@ -1,20 +1,14 @@
-# SAATM
+# ATM Communication
+## Requirements
+openjdk version "1.8.0_312"
 
-## Run
-
-### ATM
-```
-./gradlew runATM -Pargs="-f1 arg1 -f2 arg2 -f3 arg3"
-```
-
-### bank.Bank
-```
-./gradlew runBank -Pargs="-f1 arg1 -f2 arg2 -f3 arg3"
-```
-
-## Export as Jar
-Change the main class of the jar manifest in build.gradle and then run
-```
+## Build
+```sh
 ./gradlew fatJar
 ```
-A jar file will be created in build/libs with all dependencies
+
+## Run
+```sh
+java -jar build/libs/SAATM-Bank.jar <arguments>
+java -jar build/libs/SAATM-ATM.jar <arguments>
+```
